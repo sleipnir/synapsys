@@ -1,10 +1,12 @@
 package io.creativesource.synapsys.core.internals.scheduler
 
 import io.creativesource.synapsys.core.internals.loggerFor
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class Scheduler(
@@ -12,7 +14,7 @@ class Scheduler(
     private val numWorkers: Int = Runtime.getRuntime().availableProcessors()
 ) {
     private val log = loggerFor(this::class.java)
-    private val actorExecutorQueues = List(numWorkers) { ConcurrentLinkedQueue<ActorExecutor<*>>() }
+    internal val actorExecutorQueues = List(numWorkers) { ConcurrentLinkedQueue<ActorExecutor<*>>() }
     private val scope = CoroutineScope(Dispatchers.Default)
 
     init {
@@ -22,6 +24,13 @@ class Scheduler(
                 workerLoop(workerId)
             }
         }
+    }
+
+    fun cleanAllWorkerQueues() {
+        actorExecutorQueues.forEach { queue ->
+            queue.clear()
+        }
+        log.info("[Scheduler] All worker queues cleared")
     }
 
     fun enqueue(actorExecutor: ActorExecutor<*>) {
@@ -84,7 +93,7 @@ class Scheduler(
         }
     }
 
-    private fun stealWork(workerId: Int): ActorExecutor<*>? {
+    internal fun stealWork(workerId: Int): ActorExecutor<*>? {
         actorExecutorQueues.indices.forEach { otherWorkerId ->
             if (otherWorkerId != workerId) {
                 log.debug(

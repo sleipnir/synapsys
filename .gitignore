@@ -362,4 +362,8 @@ obj/
 
 !/gradle/wrapper/gradle-wrapper.jar
 
+synapsys-bom/build
+synapsys-core/build
+synapsys-examples/build
+
 # End of https://www.toptal.com/developers/gitignore/api/kotlin,java,intellij+all,androidstudio,maven,gradle,linux,macos,windows

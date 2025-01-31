@@ -31,8 +31,6 @@ class ZeroMQMailbox<M : Any>(private val serializer: MessageSerializer = Protobu
 
     override suspend fun receive(): M? {
         return if (socket.hasReceiveMore()) {
-            log.info("Funfou !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!############@@@@@@@@@@@@@@@@@&&&&&&&&&&&******************************")
-
             val msgBytes: ByteArray = socket.recv(0)
             serializer.deserialize(msgBytes, messageClass)
         } else {

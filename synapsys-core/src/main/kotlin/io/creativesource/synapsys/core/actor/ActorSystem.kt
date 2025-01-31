@@ -4,11 +4,9 @@ import io.creativesource.synapsys.core.internals.ActorAdapter
 import io.creativesource.synapsys.core.internals.BaseActor
 import io.creativesource.synapsys.core.internals.mailbox.Mailbox
 import io.creativesource.synapsys.core.internals.mailbox.transport.ChannelMailbox
-import io.creativesource.synapsys.core.internals.mailbox.transport.ZeroMQMailbox
 import io.creativesource.synapsys.core.internals.persistence.InMemoryStore
 import io.creativesource.synapsys.core.internals.scheduler.ActorExecutor
 import io.creativesource.synapsys.core.internals.scheduler.Scheduler
-import io.creativesource.synapsys.core.internals.serialization.KotlinxMessageSerializer
 import io.creativesource.synapsys.core.internals.serialization.ProtobufMessageSerializer
 
 object ActorSystem {
@@ -24,7 +22,6 @@ object ActorSystem {
         actor.store = InMemoryStore()
         val adapter = ActorAdapter(actor)
         val mailbox = Mailbox<M>(ChannelMailbox(ProtobufMessageSerializer()))
-        //val mailbox = Mailbox<M>(ZeroMQMailbox(ProtobufMessageSerializer()))
         val executor = ActorExecutor(adapter, mailbox)
 
         executors[id] = executor

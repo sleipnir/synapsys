@@ -12,6 +12,10 @@ kotlin {
     jvmToolchain(17)
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 dependencies {
     // Standard libraries
     implementation(platform(project(":synapsys-bom")))
@@ -22,8 +26,6 @@ dependencies {
     implementation("org.zeromq:jeromq")
 
     // Serialization formats
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("com.google.code.gson:gson")
     implementation("com.google.protobuf:protobuf-java")
     implementation("io.protostuff:protostuff-core")
@@ -31,4 +33,10 @@ dependencies {
 
     // Logs
     implementation("org.slf4j:slf4j-api")
+
+    // Tests
+    api("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("io.mockk:mockk")
+    testImplementation("org.junit.jupiter:junit-jupiter")
 }

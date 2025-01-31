@@ -17,7 +17,6 @@ dependencies {
     implementation(project(":synapsys-core"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core")
     implementation("ch.qos.logback:logback-classic")
 }
 
