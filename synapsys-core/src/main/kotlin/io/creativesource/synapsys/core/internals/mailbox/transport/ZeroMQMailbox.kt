@@ -4,42 +4,85 @@ import io.creativesource.synapsys.core.internals.MessageSerializer
 import io.creativesource.synapsys.core.internals.loggerFor
 import io.creativesource.synapsys.core.internals.mailbox.SynapsysAbstractQueue
 import io.creativesource.synapsys.core.internals.serialization.ProtobufMessageSerializer
-import org.zeromq.ZMQ
 
-class ZeroMQMailbox<M : Any>(private val serializer: MessageSerializer = ProtobufMessageSerializer()) :
-    SynapsysAbstractQueue<M>() {
-    private lateinit var messageClass: Class<M>
+import org.zeromq.ZMQ
+import org.zeromq.ZMQException
+
+class ZeroMQMailbox<M : Any>(
+    private val serializer: MessageSerializer = ProtobufMessageSerializer(),
+    private val endpoint: String = "inproc://mailbox"
+) : SynapsysAbstractQueue<M>() {
 
     private val log = loggerFor(this::class.java)
     private val context = ZMQ.context(1)
-    private val socket = context.socket(ZMQ.PAIR)
+    private lateinit var messageClass: Class<M>
 
-    init {
-        log.debug("Starting ZeroMQ mailbox")
-        socket.bind("inproc://mailbox")
+    private val sender = context.socket(ZMQ.PAIR).apply {
+        try {
+            connect(endpoint)
+        } catch (e: ZMQException) {
+            log.error("Error connecting to endpoint: $endpoint", e)
+            throw e
+        }
     }
 
+    private val receiver = context.socket(ZMQ.PAIR).apply {
+        try {
+            bind(endpoint)
+        } catch (e: ZMQException) {
+            log.error("Error binding to endpoint: $endpoint", e)
+            throw e
+        }
+    }
+
+    @Volatile
+    private var closed = false
+
     override suspend fun send(message: M) {
+        checkNotClosed()
         // This only works because there need to be messages to receive the result of the deserialization,
         // otherwise there would be an error.
         messageClass = message.javaClass
         val msg = serializer.serialize(message)
         log.debug("Sending message: {}", message)
-        socket.send(msg, 0)
-        log.debug("Message sent")
+        synchronized(sender) {
+            sender.send(msg, ZMQ.DONTWAIT)
+        }
     }
 
     override suspend fun receive(): M? {
-        return if (socket.hasReceiveMore()) {
-            val msgBytes: ByteArray = socket.recv(0)
-            serializer.deserialize(msgBytes, messageClass)
-        } else {
-            null
+        checkNotClosed()
+        return synchronized(receiver) {
+            val msgBytes = receiver.recv(ZMQ.DONTWAIT)
+            if (msgBytes != null) {
+                serializer.deserialize(msgBytes, messageClass)
+            } else {
+                null
+            }
         }
     }
 
     override fun hasMessages(): Boolean {
-        socket.recv(ZMQ.DONTWAIT)?.let { return@let true }
-        return false
+        checkNotClosed()
+        return synchronized(receiver) {
+            receiver.hasReceiveMore()
+        }
+    }
+
+    fun close() {
+        closed = true
+        try {
+            sender.close()
+            receiver.close()
+            context.close()
+        } catch (e: Exception) {
+            log.error("Error closing ZeroMQ resources", e)
+        }
+    }
+
+    private fun checkNotClosed() {
+        if (closed) {
+            throw IllegalStateException("Mailbox is closed")
+        }
     }
 }
