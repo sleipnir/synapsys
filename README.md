@@ -1,5 +1,5 @@
 # Synapsys 🧠⚡
-A lightweight, fast, and efficient actor system for resource-constrained environments!
+A lightweight, fast, and efficient actor system for resource-constrained environments! (Working in progress)
 
 ## Why Synapsys? 🤔
 Unlike heavyweight frameworks like Akka, Synapsys is designed to be lightweight and blazing fast, making it perfect for small devices, embedded systems, and applications that need a minimal footprint. 🚀
