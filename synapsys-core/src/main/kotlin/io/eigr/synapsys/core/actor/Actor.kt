@@ -7,7 +7,7 @@ abstract class Actor<S, M, R>(val id: String?, initialState: S?) {
 
     internal var store: Store<S>? = null
 
-    abstract fun onReceive(message: M, state: Context<S>): Pair<S, R>
+    abstract fun onReceive(message: M, ctx: Context<S>): Pair<S, R>
 
     internal suspend fun onStart()  {
         this.state = Context(store?.load(id!!))
