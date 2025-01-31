@@ -21,5 +21,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.creativesource.synapsys.examples.MainKt")
+    mainClass.set("io.eigr.synapsys.examples.MainKt")
 }

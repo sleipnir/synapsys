@@ -52,6 +52,7 @@ Synapsys actors are ***stateful by default***, meaning they retain their state a
 
 ```kotlin
 import io.eigr.synapsys.core.actor.Actor
+import io.eigr.synapsys.core.actor.Context
 import org.slf4j.LoggerFactory
 
 data class Message(private val text: String?)
@@ -59,9 +60,9 @@ data class Message(private val text: String?)
 class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id, initialState) {
     private val log = LoggerFactory.getLogger(MyActor::class.java)
 
-    override fun onReceive(message: Message, state: Int): Pair<Int, String> {
-        log.info("Received message on Actor {}: {} with state: {}", id, message, state)
-        val newState = state + 1
+    override fun onReceive(message: Message, ctx: Context<Int>): Pair<Int, String> {
+        log.info("Received message on Actor {}: {} with previous state: {}", id, message, ctx.state)
+        val newState = ctx.state!! + 1
         return Pair(newState, "Processed: $message with new state: $newState")
     }
 }
@@ -77,21 +78,24 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking {
-    val actors = (0..1000).map { i ->
+    val actors: listOf<ActorPointer<Any>>() = (0..1000).map { i ->
         ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
-            MyActor(id, initialState)
-        }
+            MyActor(
+                id,
+                initialState
+            )
+        } as ActorPointer<Any>
     }
 
     ActorSystem.start()
 
     actors.forEach { actor ->
-        repeat(10) {
-            ActorSystem.sendMessage(actor.id, Message("Hello"))
+        repeat(100) {
+            actor.send(Message("Hello"))
         }
     }
 
-    delay(10000)
+    delay(120000)
 }
 ```
 

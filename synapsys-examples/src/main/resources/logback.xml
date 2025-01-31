@@ -5,7 +5,7 @@
         </encoder>
     </appender>
 
-    <logger name="io.creativesource.synapsys" level="INFO"/>
+    <logger name="io.eigr.synapsys" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

@@ -3,6 +3,6 @@ plugins {
 }
 
 allprojects {
-    group = "io.creativesource"
+    group = "io.eigr"
     version = "1.0.0"
 }
