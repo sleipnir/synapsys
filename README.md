@@ -23,6 +23,7 @@ It provides a simple and intuitive API for building concurrent, stateful actors 
 ## Quickstart Guide 🏁
 
 1️⃣ Install Synapsys
+
 To use Synapsys, add the following dependency to your **Gradle (Kotlin DSL)**:
 
 ```kotlin
@@ -44,6 +45,7 @@ Or for **Maven users**:
 ---
 
 2️⃣ Define an Actor 🎭
+
 Actors in Synapsys process messages and manage their own state:
 
 ```kotlin
