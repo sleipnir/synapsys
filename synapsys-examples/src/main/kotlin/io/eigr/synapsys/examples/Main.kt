@@ -33,7 +33,7 @@ fun main() = runBlocking {
     var actors = listOf<ActorPointer<Any>>()
 
     val creationTime = measureTime {
-        actors = (0..1).map { i ->
+        actors = (0..80000).map { i ->
             ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
                 MyActor(
                     id,
@@ -47,7 +47,7 @@ fun main() = runBlocking {
 
     val executionTime = measureTime {
         actors.forEach { actor ->
-            repeat(80000) {
+            repeat(50) {
                 actor.send(Message("Hello"))
             }
         }
