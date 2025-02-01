@@ -78,6 +78,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking {
+    ActorSystem.start()
+    
     val actors: listOf<ActorPointer<Any>>() = (0..1000).map { i ->
         ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
             MyActor(
@@ -86,8 +88,6 @@ fun main() = runBlocking {
             )
         } as ActorPointer<Any>
     }
-
-    ActorSystem.start()
 
     actors.forEach { actor ->
         repeat(100) {
