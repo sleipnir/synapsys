@@ -4,9 +4,7 @@ import io.eigr.synapsys.core.internals.MessageSerializer
 import io.eigr.synapsys.core.internals.loggerFor
 import io.eigr.synapsys.core.internals.mailbox.MailboxAbstractQueue
 import io.eigr.synapsys.core.internals.serialization.ProtobufMessageSerializer
-
 import org.zeromq.ZMQ
-import org.zeromq.ZMQException
 import kotlin.random.Random
 
 class ZeroMQMailbox<M : Any>(
@@ -18,55 +16,47 @@ class ZeroMQMailbox<M : Any>(
     private val context = ZMQ.context(1)
     private lateinit var messageClass: Class<M>
 
-    private val sender = context.socket(ZMQ.PAIR).apply {
-        try {
-            connect(endpoint)
-        } catch (e: ZMQException) {
-            log.error("Error connecting to endpoint: $endpoint", e)
-            throw e
-        }
+    private val sender = context.socket(ZMQ.DEALER).apply {
+        connect(endpoint)
     }
 
-    private val receiver = context.socket(ZMQ.PAIR).apply {
-        try {
-            bind(endpoint)
-        } catch (e: ZMQException) {
-            log.error("Error binding to endpoint: $endpoint", e)
-            throw e
-        }
+    private val receiver = context.socket(ZMQ.ROUTER).apply {
+        bind(endpoint)
     }
 
     @Volatile
     private var closed = false
 
     override suspend fun send(message: M) {
-        checkNotClosed()
-        // This only works because there need to be messages to receive the result of the deserialization,
-        // otherwise there would be an error.
-        messageClass = message.javaClass
+        message::class.java.also { messageClass = it as Class<M> }
         val msg = serializer.serialize(message)
-        log.debug("Sending message: {}", message)
+
+        // Add empty envelope to ROUTER/DEALER (necessary!)
         synchronized(sender) {
+            sender.send("", ZMQ.SNDMORE) // Envelope
             sender.send(msg, ZMQ.DONTWAIT)
         }
     }
 
     override suspend fun receive(): M? {
-        checkNotClosed()
-        return synchronized(receiver) {
-            val msgBytes = receiver.recv(ZMQ.DONTWAIT)
-            if (msgBytes != null) {
-                serializer.deserialize(msgBytes, messageClass)
-            } else {
-                null
-            }
+        // Ignore the ROUTER/DEALER envelope ( first frame ;) )
+        val identityFrameBytes = receiver.recv(ZMQ.DONTWAIT) ?: return null
+        val emptyFrame = receiver.recv(ZMQ.DONTWAIT)
+        val messageFrame = receiver.recv(ZMQ.DONTWAIT) // real message
+        println("Frame: $messageFrame")
+
+        if (messageFrame == null) {
+            return null
         }
+
+        return serializer.deserialize(messageFrame, messageClass)
     }
 
     override fun hasMessages(): Boolean {
         checkNotClosed()
         return synchronized(receiver) {
-            receiver.hasReceiveMore()
+            //receiver.hasReceiveMore()
+            true
         }
     }
 

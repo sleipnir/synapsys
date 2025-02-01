@@ -63,7 +63,7 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
     override fun onReceive(message: Message, ctx: Context<Int>): Pair<Context<Int>, String> {
         log.info("Received message on Actor {}: {} with previous state: {}", id, message, ctx.state)
         ctx.update(ctx.state!! + 1)
-        return Pair(ctx, "Processed: $message with new state: ${ctx.state}")
+        return ctx to "Processed: $message with new state: ${ctx.state}"
     }
 }
 ```
@@ -92,6 +92,10 @@ fun main() = runBlocking {
     actors.forEach { actor ->
         repeat(100) {
             actor.send(Message("Hello"))
+
+            // or use ask pattern
+            //val resp = actor.ask<String>(Message("Hello"))
+            //println("Actor response is $resp")
         }
     }
 

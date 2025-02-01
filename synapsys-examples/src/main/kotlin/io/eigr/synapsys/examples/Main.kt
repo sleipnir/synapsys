@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import kotlin.time.measureTime
 
-data class Message(private val text: String?)
+data class Message(val text: String?)
 
 class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id, initialState) {
     private val log = LoggerFactory.getLogger(MyActor::class.java)
@@ -25,18 +25,17 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
             Thread.currentThread()
         )
 
-        ctx.update(ctx.state!! + 1)
-        return Pair(ctx, "Processed: $message with new state: ${ctx.state}")
+        val newCtx = ctx.update(ctx.state!! + 1)
+        return ctx to "Processed: ${message.text} with new state: ${newCtx.state}"
     }
 }
 
 fun main() = runBlocking {
-    var actors = listOf<ActorPointer<Any>>()
-
     ActorSystem.create()
 
+    var actors = listOf<ActorPointer<Any>>()
     val creationTime = measureTime {
-        actors = (0..80000).map { i ->
+        actors = (0..2).map { i ->
             ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
                 MyActor(
                     id,
@@ -44,14 +43,16 @@ fun main() = runBlocking {
                 )
             } as ActorPointer<Any>
         }
-
-
     }
 
     val executionTime = measureTime {
         actors.forEach { actor ->
-            repeat(50) {
+            repeat(10000) {
                 actor.send(Message("Hello"))
+
+                // or use ask pattern
+                //val resp = actor.ask<String>(Message("Hello"))
+                //println("Actor response is $resp")
             }
         }
     }

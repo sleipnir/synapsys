@@ -1,6 +1,7 @@
 package io.eigr.synapsys.core.internals.mailbox.transport
 
 import io.eigr.synapsys.core.internals.serialization.ProtobufMessageSerializer
+import kotlinx.coroutines.delay
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -21,21 +22,28 @@ class ZeroMQMailboxTest {
 
     @Test
     fun `should send and receive messages`() = runBlocking {
+        val mailbox = ZeroMQMailbox<String>()
         val testMessage = "Hello ZeroMQ"
 
+        // ensure ordering
         launch {
             mailbox.send(testMessage)
-        }
+        }.join() // wait to complete
 
         val received = mailbox.receive()
         assertEquals(testMessage, received)
+
+        mailbox.close()
     }
 
     @Test
     fun `hasMessages should return correct status`() = runBlocking {
         assertFalse(mailbox.hasMessages())
 
-        mailbox.send("test")
+        launch {
+            mailbox.send("test")
+            delay(10)
+        }.join()
         assertTrue(mailbox.hasMessages())
 
         mailbox.receive()
