@@ -103,6 +103,8 @@ fun main() = runBlocking {
 }
 ```
 
+See more examples in [example project](synapsys-examples)
+
 ---
 
 ## Why Stateful Actors Matter 🧠

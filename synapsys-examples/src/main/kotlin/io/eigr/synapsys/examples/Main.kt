@@ -4,14 +4,38 @@ import io.eigr.synapsys.core.actor.Actor
 import io.eigr.synapsys.core.actor.ActorPointer
 import io.eigr.synapsys.core.actor.ActorSystem
 import io.eigr.synapsys.core.actor.Context
-
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-
 import org.slf4j.LoggerFactory
 import kotlin.time.measureTime
 
-data class Message(val text: String?)
+open class Message(open val text: String?)
+
+class Hello(override val text: String?, val name: String) : Message(text)
+
+class Bye(override val text: String?, val name: String) : Message(text)
+
+class MultiMessageActor(id: String?, initialState: Int?) :
+    Actor<Int, Message, String>(id, initialState) {
+    override fun onReceive(message: Message, ctx: Context<Int>): Pair<Context<Int>, String> {
+        when (message) {
+            is Hello -> {
+                val newCtx = ctx.update(ctx.state!! + 1)
+                return ctx to "Hello ${message.name} with new state: ${newCtx.state}"
+            }
+
+            is Bye -> {
+                val newCtx = ctx.update(ctx.state!! + 1)
+                return ctx to "Bye bye ${message.name} with new state: ${newCtx.state}"
+            }
+
+            else -> {
+                val newCtx = ctx.update(ctx.state!! + 1)
+                return ctx to "${message.text} with new state: ${newCtx.state}"
+            }
+        }
+    }
+}
 
 class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id, initialState) {
     private val log = LoggerFactory.getLogger(MyActor::class.java)
@@ -33,9 +57,20 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
 fun main() = runBlocking {
     ActorSystem.create()
 
+    val actorPointer: ActorPointer<Message> = ActorSystem.createActor(
+        "multi-message-actor",
+        0
+    ) { id, initialState -> MultiMessageActor(id, initialState) }
+
+    val helloResp = actorPointer.ask<String>(Hello("Hello", "Adriano"))
+    val byeResp = actorPointer.ask<String>(Bye("Tchau", "Adriano"))
+
+    println("Hello response $helloResp")
+    println("Bye response $byeResp")
+
     var actors = listOf<ActorPointer<Any>>()
     val creationTime = measureTime {
-        actors = (0..2).map { i ->
+        actors = (0..80000).map { i ->
             ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
                 MyActor(
                     id,
@@ -47,7 +82,7 @@ fun main() = runBlocking {
 
     val executionTime = measureTime {
         actors.forEach { actor ->
-            repeat(10000) {
+            repeat(50) {
                 actor.send(Message("Hello"))
 
                 // or use ask pattern
