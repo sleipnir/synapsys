@@ -3,7 +3,7 @@ package io.eigr.synapsys.core.internals
 import io.eigr.synapsys.core.actor.Actor
 import io.eigr.synapsys.core.actor.Context
 
-class BaseActorAdapter<S, M, R>(private val actor: Actor<S, M, R>) :
+class BaseActorAdapter<S : Any, M : Any, R>(private val actor: Actor<S, M, R>) :
     BaseActor {
 
     override val id: String

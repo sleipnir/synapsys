@@ -39,4 +39,5 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("io.mockk:mockk")
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("ch.qos.logback:logback-classic")
 }

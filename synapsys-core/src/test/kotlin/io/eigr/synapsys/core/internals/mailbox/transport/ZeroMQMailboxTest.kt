@@ -1,6 +1,6 @@
 package io.eigr.synapsys.core.internals.mailbox.transport
 
-import io.creativesource.synapsys.core.internals.serialization.ProtobufMessageSerializer
+import io.eigr.synapsys.core.internals.serialization.ProtobufMessageSerializer
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

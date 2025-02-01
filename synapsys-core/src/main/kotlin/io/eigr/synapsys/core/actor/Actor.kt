@@ -2,7 +2,7 @@ package io.eigr.synapsys.core.actor
 
 import io.eigr.synapsys.core.internals.persistence.Store
 
-abstract class Actor<S, M, R>(val id: String?, initialState: S?) {
+abstract class Actor<S : Any, M : Any, R>(val id: String?, initialState: S?) {
     var state: Context<S> = Context(initialState)
 
     internal var store: Store<S>? = null

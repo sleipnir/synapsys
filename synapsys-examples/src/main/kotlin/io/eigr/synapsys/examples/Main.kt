@@ -32,6 +32,8 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
 fun main() = runBlocking {
     var actors = listOf<ActorPointer<Any>>()
 
+    ActorSystem.create()
+
     val creationTime = measureTime {
         actors = (0..80000).map { i ->
             ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
@@ -42,7 +44,7 @@ fun main() = runBlocking {
             } as ActorPointer<Any>
         }
 
-        ActorSystem.start()
+
     }
 
     val executionTime = measureTime {

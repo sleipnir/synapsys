@@ -1,6 +1,6 @@
 package io.eigr.synapsys.core.internals.persistence
 
-class InMemoryStore<S> : Store<S> {
+class InMemoryStore<S : Any> : Store<S> {
     private val store = mutableMapOf<String, S>()
 
     override suspend fun save(id: String, state: S) {

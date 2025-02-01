@@ -7,10 +7,11 @@ import io.eigr.synapsys.core.internals.serialization.ProtobufMessageSerializer
 
 import org.zeromq.ZMQ
 import org.zeromq.ZMQException
+import kotlin.random.Random
 
 class ZeroMQMailbox<M : Any>(
     private val serializer: MessageSerializer = ProtobufMessageSerializer(),
-    private val endpoint: String = "inproc://mailbox"
+    private val endpoint: String = "inproc://mailbox-${System.currentTimeMillis()}-${Random.nextInt()}"
 ) : MailboxAbstractQueue<M>() {
 
     private val log = loggerFor(this::class.java)
