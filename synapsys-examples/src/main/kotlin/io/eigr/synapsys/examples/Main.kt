@@ -57,7 +57,7 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
 fun main() = runBlocking {
     ActorSystem.create()
 
-    val actorPointer: ActorPointer<Message> = ActorSystem.createActor(
+    val actorPointer: ActorPointer<Message> = ActorSystem.actorOf(
         "multi-message-actor",
         0
     ) { id, initialState -> MultiMessageActor(id, initialState) }
@@ -71,7 +71,7 @@ fun main() = runBlocking {
     var actors = listOf<ActorPointer<Any>>()
     val creationTime = measureTime {
         actors = (0..80000).map { i ->
-            ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
+            ActorSystem.actorOf("my-actor-$i", 0) { id, initialState ->
                 MyActor(
                     id,
                     initialState

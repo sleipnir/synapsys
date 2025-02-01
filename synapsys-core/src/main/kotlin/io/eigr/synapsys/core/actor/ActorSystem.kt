@@ -22,7 +22,7 @@ object ActorSystem {
         scheduler = Scheduler(config.maxReductions)
     }
 
-    fun <S : Any, M : Any, R> createActor(
+    fun <S : Any, M : Any, R> actorOf(
         id: String,
         initialState: S,
         actorFactory: (String, S) -> Actor<S, M, R>

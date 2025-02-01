@@ -81,7 +81,7 @@ fun main() = runBlocking {
     ActorSystem.start()
     
     val actors: listOf<ActorPointer<Any>>() = (0..1000).map { i ->
-        ActorSystem.createActor("my-actor-$i", 0) { id, initialState ->
+        ActorSystem.actorOf("my-actor-$i", 0) { id, initialState ->
             MyActor(
                 id,
                 initialState
