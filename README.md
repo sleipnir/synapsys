@@ -62,8 +62,8 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
 
     override fun onReceive(message: Message, ctx: Context<Int>): Pair<Context<Int>, String> {
         log.info("Received message on Actor {}: {} with previous state: {}", id, message, ctx.state)
-        ctx.update(ctx.state!! + 1)
-        return ctx to "Processed: $message with new state: ${ctx.state}"
+        val newCtx = ctx.update(ctx.state!! + 1)
+        return ctx to "Processed: $message with new state: ${newCtx.state}"
     }
 }
 ```
