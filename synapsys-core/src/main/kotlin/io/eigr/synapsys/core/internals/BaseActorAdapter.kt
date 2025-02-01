@@ -20,8 +20,7 @@ class BaseActorAdapter<S : Any, M : Any, R>(private val actor: Actor<S, M, R>) :
             ?: throw IllegalArgumentException("Actor $id received a message of invalid type.")
 
         val ctx: Context<S> = Context(typedState)
-        val (newState, result) = actor.onReceive(typedMessage, ctx)
-        return Pair(result, actor.mutate(newState))
+        val (newCtx, result) = actor.onReceive(typedMessage, ctx)
+        return Pair(result, newCtx.state?.let { actor.mutate(it) })
     }
-
 }

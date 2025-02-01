@@ -60,10 +60,10 @@ data class Message(private val text: String?)
 class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id, initialState) {
     private val log = LoggerFactory.getLogger(MyActor::class.java)
 
-    override fun onReceive(message: Message, ctx: Context<Int>): Pair<Int, String> {
+    override fun onReceive(message: Message, ctx: Context<Int>): Pair<Context<Int>, String> {
         log.info("Received message on Actor {}: {} with previous state: {}", id, message, ctx.state)
-        val newState = ctx.state!! + 1
-        return Pair(newState, "Processed: $message with new state: $newState")
+        ctx.update(ctx.state!! + 1)
+        return Pair(ctx, "Processed: $message with new state: ${ctx.state}")
     }
 }
 ```
