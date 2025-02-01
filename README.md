@@ -30,7 +30,7 @@ To use Synapsys, add the following dependency to your **Gradle (Kotlin DSL)**:
 
 ```kotlin
 dependencies {
-    implementation("io.eigr.synapsys:synapsys-core:1.0.0")
+    implementation("io.eigr.synapsys:synapsys-core:0.1.0")
 }
 ```
 
@@ -40,7 +40,7 @@ Or for **Maven users**:
 <dependency>
     <groupId>io.eigr.synapsys</groupId>
     <artifactId>synapsys-core</artifactId>
-    <version>1.0.0</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
