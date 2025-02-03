@@ -25,6 +25,9 @@ dependencies {
     // Transport
     implementation("org.zeromq:jeromq")
 
+    // Persistence
+    implementation("net.openhft:chronicle-map")
+
     // Serialization formats
     implementation("com.google.code.gson:gson")
     implementation("com.google.protobuf:protobuf-java")

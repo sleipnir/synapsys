@@ -1,10 +1,9 @@
 package io.eigr.synapsys.core.actor
 
-import io.eigr.synapsys.core.internals.mailbox.AskMessage
 import io.eigr.synapsys.core.internals.loggerFor
+import io.eigr.synapsys.core.internals.mailbox.AskMessage
 import io.eigr.synapsys.core.internals.mailbox.PendingRequests
 import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
-import kotlinx.coroutines.CompletableDeferred
 import java.util.UUID
 
 class ActorPointer<M : Any>(private val actorId: String, private val executor: ActorExecutor<M>) {

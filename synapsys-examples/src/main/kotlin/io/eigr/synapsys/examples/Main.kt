@@ -20,17 +20,17 @@ class MultiMessageActor(id: String?, initialState: Int?) :
     override fun onReceive(message: Message, ctx: Context<Int>): Pair<Context<Int>, String> {
         when (message) {
             is Hello -> {
-                val newCtx = ctx.update(ctx.state!! + 1)
+                val newCtx = ctx.withState(ctx.state!! + 1)
                 return ctx to "Hello ${message.name} with new state: ${newCtx.state}"
             }
 
             is Bye -> {
-                val newCtx = ctx.update(ctx.state!! + 1)
+                val newCtx = ctx.withState(ctx.state!! + 1)
                 return ctx to "Bye bye ${message.name} with new state: ${newCtx.state}"
             }
 
             else -> {
-                val newCtx = ctx.update(ctx.state!! + 1)
+                val newCtx = ctx.withState(ctx.state!! + 1)
                 return ctx to "${message.text} with new state: ${newCtx.state}"
             }
         }
@@ -49,7 +49,7 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
             Thread.currentThread()
         )
 
-        val newCtx = ctx.update(ctx.state!! + 1)
+        val newCtx = ctx.withState(ctx.state!! + 1)
         return ctx to "Processed: ${message.text} with new state: ${newCtx.state}"
     }
 }
@@ -67,6 +67,25 @@ fun main() = runBlocking {
 
     println("Hello response $helloResp")
     println("Bye response $byeResp")
+
+    val failingActor = ActorSystem.actorOf(
+        id = "failing-actor",
+        initialState = 0,
+    ) { id, state ->
+        object : Actor<Int, String, String>(id, state) {
+            override fun onReceive(message: String, ctx: Context<Int>): Pair<Context<Int>, String> {
+                println("Actor $id received: $message")
+                if ((0..2).random() == 0) {
+                    throw RuntimeException("Simulated failure")
+                }
+                return ctx.withState(ctx.state?.plus(1) ?: 0) to "Processed: $message"
+            }
+        }
+    }
+
+    repeat(1000) {
+        failingActor.send("Hello")
+    }
 
     var actors = listOf<ActorPointer<Any>>()
     val creationTime = measureTime {

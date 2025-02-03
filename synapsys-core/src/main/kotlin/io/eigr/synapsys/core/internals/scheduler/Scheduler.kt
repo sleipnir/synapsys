@@ -26,6 +26,30 @@ class Scheduler(
         }
     }
 
+    fun enqueue(actorExecutor: ActorExecutor<*>) {
+        val workerIndex = (0 until numWorkers).random()
+        log.debug("[Scheduler] Enqueuing actor {} to worker {}", actorExecutor.actor.id, workerIndex)
+
+        actorExecutor.resumeExecution()
+        actorExecutorQueues[workerIndex].offer(actorExecutor)
+    }
+
+    fun removeActor(actorId: String): Boolean {
+        val removed = actorExecutorQueues.any { queue ->
+            val originalSize = queue.size
+            queue.removeIf { it.actor.id == actorId }
+            originalSize != queue.size
+        }
+
+        return if (removed) {
+            log.info("[Scheduler] Removed actor {} from scheduler", actorId)
+            true
+        } else {
+            log.warn("[Scheduler] Actor {} not found in scheduler", actorId)
+            false
+        }
+    }
+
     fun cleanAllWorkerQueues() {
         actorExecutorQueues.forEach { queue ->
             queue.clear()
@@ -33,18 +57,11 @@ class Scheduler(
         log.info("[Scheduler] All worker queues cleared")
     }
 
-    fun enqueue(actorExecutor: ActorExecutor<*>) {
-        val workerIndex = (0 until numWorkers).random()
-        log.debug("[Scheduler] Enqueuing actor {} to worker {}", actorExecutor.actor.id, workerIndex)
-        actorExecutorQueues[workerIndex].offer(actorExecutor)
-    }
-
     private suspend fun workerLoop(workerId: Int) {
         val queue = actorExecutorQueues[workerId]
 
         while (true) {
             val actorExecutor = queue.poll() ?: stealWork(workerId)
-
             if (actorExecutor != null) {
                 scope.launch {
                     processActor(actorExecutor)
@@ -59,7 +76,7 @@ class Scheduler(
         actorExecutor.resumeExecution()
         var reductions = 0
 
-        while (actorExecutor.hasMessages() && reductions < maxReductions) {
+        while (isProcessable(actorExecutor, reductions)) {
             val message = actorExecutor.dequeueMessage()
             if (message != null) {
                 actorExecutor.processMessage(message)
@@ -67,7 +84,7 @@ class Scheduler(
             }
         }
 
-        if (!actorExecutor.hasMessages() || reductions >= maxReductions) {
+        if (isNotProcessable(actorExecutor, reductions)) {
             log.trace(
                 "[Scheduler] Has messages: {}. Reductions: {}. Max reductions: {}",
                 actorExecutor.hasMessages(),
@@ -92,6 +109,12 @@ class Scheduler(
             )
         }
     }
+
+    private fun isProcessable(actorExecutor: ActorExecutor<*>, reductions: Int): Boolean =
+        actorExecutor.hasMessages() && reductions < maxReductions
+
+    private fun isNotProcessable(actorExecutor: ActorExecutor<*>, reductions: Int): Boolean =
+        !actorExecutor.hasMessages() || reductions >= maxReductions
 
     internal fun stealWork(workerId: Int): ActorExecutor<*>? {
         actorExecutorQueues.indices.forEach { otherWorkerId ->

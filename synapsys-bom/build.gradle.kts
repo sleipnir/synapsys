@@ -15,6 +15,9 @@ dependencies {
         // Transport
         api("org.zeromq:jeromq:0.6.0")
 
+        // Persistence
+        api("net.openhft:chronicle-map:3.23.5")
+
         // Logs
         api("org.slf4j:slf4j-api:2.0.16")
         api("ch.qos.logback:logback-classic:1.5.16")

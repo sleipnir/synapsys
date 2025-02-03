@@ -1,11 +1,12 @@
 package io.eigr.synapsys.core.internals.scheduler
 
-import io.eigr.synapsys.core.Supervisor
-import io.eigr.synapsys.core.internals.mailbox.AskMessage
 import io.eigr.synapsys.core.internals.BaseActor
 import io.eigr.synapsys.core.internals.loggerFor
+import io.eigr.synapsys.core.internals.mailbox.AskMessage
 import io.eigr.synapsys.core.internals.mailbox.Mailbox
 import io.eigr.synapsys.core.internals.mailbox.PendingRequests
+import io.eigr.synapsys.core.internals.supervisor.SupervisorMessage
+import kotlinx.coroutines.channels.Channel
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -13,14 +14,12 @@ import kotlin.coroutines.suspendCoroutine
 class ActorExecutor<M : Any>(
     private val _actor: BaseActor,
     private val mailbox: Mailbox<M>,
-    private val _supervisor: Supervisor? = null
+    private val supervisorChannel: Channel<SupervisorMessage>? = null
 ) {
     private val log = loggerFor(this::class.java)
     private var continuation: Continuation<Unit>? = null
 
     val actor: BaseActor get() = this._actor
-
-    val supervisor: Supervisor? get() = this._supervisor
 
     suspend fun send(message: M) {
         log.debug("[ActorExecutor] Actor {} sending message: {}", _actor.id, message)
@@ -82,7 +81,7 @@ class ActorExecutor<M : Any>(
             if (message is AskMessage<*>) {
                 PendingRequests.failRequest(message.id, e)
             }
-            //supervisor?.handleFailure(actor, e)
+            supervisorChannel?.send(SupervisorMessage.ActorFailed(this, e))
         }
     }
 

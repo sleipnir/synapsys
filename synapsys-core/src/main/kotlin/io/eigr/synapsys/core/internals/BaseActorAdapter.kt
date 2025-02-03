@@ -9,7 +9,9 @@ class BaseActorAdapter<S : Any, M : Any, R>(private val actor: Actor<S, M, R>) :
     override val id: String
         get() = actor.id!!
 
-    override suspend fun getState(): S? = actor.state.state
+    override suspend fun getState(): S? {
+        return actor.state.state
+    }
 
     override suspend fun processMessageUntyped(message: Any, currentState: Any?): Pair<Any?, Any?> {
         @Suppress("UNCHECKED_CAST")

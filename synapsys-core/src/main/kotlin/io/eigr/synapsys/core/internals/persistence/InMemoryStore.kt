@@ -1,7 +1,9 @@
 package io.eigr.synapsys.core.internals.persistence
 
+import java.util.concurrent.ConcurrentHashMap
+
 class InMemoryStore<S : Any> : Store<S> {
-    private val store = mutableMapOf<String, S>()
+    private val store = ConcurrentHashMap<String, S>()
 
     override suspend fun save(id: String, state: S) {
         store[id] = state
