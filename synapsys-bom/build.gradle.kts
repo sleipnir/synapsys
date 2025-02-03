@@ -17,6 +17,7 @@ dependencies {
 
         // Persistence
         api("net.openhft:chronicle-map:3.23.5")
+        api("net.openhft:affinity:3.23.3")
 
         // Logs
         api("org.slf4j:slf4j-api:2.0.16")

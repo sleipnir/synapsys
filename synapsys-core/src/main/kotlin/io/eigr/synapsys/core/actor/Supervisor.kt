@@ -119,6 +119,7 @@ class Supervisor(
             )
 
             // enqueue
+            children[actorId] = ActorEntity(actorExecutor, oldInstance.factory)
             scheduler.enqueue(newActorExecutor)
         }
     }

@@ -4,6 +4,9 @@ import io.eigr.synapsys.core.actor.Actor
 import io.eigr.synapsys.core.actor.ActorPointer
 import io.eigr.synapsys.core.actor.ActorSystem
 import io.eigr.synapsys.core.actor.Context
+import io.eigr.synapsys.core.actor.RestartStrategy
+import io.eigr.synapsys.core.actor.Supervisor
+import io.eigr.synapsys.core.actor.SupervisorStrategy
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -57,7 +60,7 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
 fun main() = runBlocking {
     ActorSystem.create()
 
-    val actorPointer: ActorPointer<Message> = ActorSystem.actorOf(
+    /*val actorPointer: ActorPointer<Message> = ActorSystem.actorOf(
         "multi-message-actor",
         0
     ) { id, initialState -> MultiMessageActor(id, initialState) }
@@ -66,11 +69,14 @@ fun main() = runBlocking {
     val byeResp = actorPointer.ask<String>(Bye("Tchau", "Adriano"))
 
     println("Hello response $helloResp")
-    println("Bye response $byeResp")
+    println("Bye response $byeResp")*/
+
+    val myCustomSupervisor = Supervisor("custom-supervisor", strategy = SupervisorStrategy(RestartStrategy.OneForOne, maxRetries = 10))
 
     val failingActor = ActorSystem.actorOf(
         id = "failing-actor",
         initialState = 0,
+        myCustomSupervisor,
     ) { id, state ->
         object : Actor<Int, String, String>(id, state) {
             override fun onReceive(message: String, ctx: Context<Int>): Pair<Context<Int>, String> {
@@ -87,7 +93,7 @@ fun main() = runBlocking {
         failingActor.send("Hello")
     }
 
-    var actors = listOf<ActorPointer<Any>>()
+    /*var actors = listOf<ActorPointer<Any>>()
     val creationTime = measureTime {
         actors = (0..80000).map { i ->
             ActorSystem.actorOf("my-actor-$i", 0) { id, initialState ->
@@ -110,10 +116,10 @@ fun main() = runBlocking {
             }
         }
     }
-
+*/
     delay(120000)
-    println("Creation time: $creationTime")
-    println("Execution time: $executionTime")
+    //println("Creation time: $creationTime")
+    //println("Execution time: $executionTime")
 }
 
 

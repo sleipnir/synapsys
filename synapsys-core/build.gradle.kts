@@ -27,6 +27,7 @@ dependencies {
 
     // Persistence
     implementation("net.openhft:chronicle-map")
+    implementation("net.openhft:affinity")
 
     // Serialization formats
     implementation("com.google.code.gson:gson")
