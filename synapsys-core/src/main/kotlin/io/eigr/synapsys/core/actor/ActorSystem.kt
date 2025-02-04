@@ -81,7 +81,12 @@ object ActorSystem {
             throw IllegalStateException("Make sure you create ActorSystem first")
         }
 
-        val executor = createActorExecutor(id, initialState, config, supervisor, actorFactory)
+        val executor = createActorExecutor(
+            id = id,
+            initialState = initialState,
+            config = config,
+            supervisor = supervisor,
+            actorFactory = actorFactory)
 
         supervisor?.addChild<S, M, R>(executor, actorFactory)
         supervisor?.setConfig(config)
@@ -103,13 +108,13 @@ object ActorSystem {
         initialState: S,
         config: Config,
         supervisor: Supervisor?,
-        actorFactory: (String, S) -> Actor<S, M, R>
-    ): ActorExecutor<M> {
+        actorFactory: (String, S) -> Actor<S, M, R>,
+        mailbox: Mailbox<out M> = createMailbox(config)
+        ): ActorExecutor<out M> {
         val actor = actorFactory(id, initialState)
         actor.store = createStore(config.storeClass)
 
         val adapter = BaseActorAdapter(actor)
-        val mailbox = createMailbox<M>(config)
 
         return ActorExecutor(adapter, mailbox, supervisor?.getMessageChannel())
     }

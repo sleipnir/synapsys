@@ -1,8 +1,9 @@
 # Synapsys 🧠⚡
-A lightweight, fast, and efficient **stateful** actor system for resource-constrained environments! (Working in progress)
+A lightweight, fast, and efficient **stateful** [actor system]() for resource-constrained environments! (Working in progress)
 
 ## Why Synapsys? 🤔
-Unlike heavyweight frameworks like **Akka**, **Synapsys** is designed to be **lightweight and blazing fast**, making it perfect for **small devices**, **embedded systems**, **and applications that need a minimal footprint**. 🚀
+Unlike heavyweight frameworks like **[Akka]()**, or sidecar based actor model like **[Spawn](https://github.com/eigr/spawn)**, **[Dapr](https://dapr.io/)** and others, 
+**Synapsys** is designed to be **lightweight and blazing fast**, making it perfect for **small devices**, **embedded systems**, **and applications that need a minimal footprint**. 🚀
 
 It provides a **simple and intuitive API** for building concurrent, stateful actors while keeping things efficient.
 
@@ -86,7 +87,7 @@ fun main() = runBlocking {
                 id,
                 initialState
             )
-        } as ActorPointer<Any>
+        }
     }
 
     actors.forEach { actor ->

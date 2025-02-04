@@ -13,6 +13,8 @@ class BaseActorAdapter<S : Any, M : Any, R>(private val actor: Actor<S, M, R>) :
         return actor.state.state
     }
 
+    override suspend fun rehydrate() = actor.rehydrate()
+
     override suspend fun processMessageUntyped(message: Any, currentState: Any?): Pair<Any?, Any?> {
         @Suppress("UNCHECKED_CAST")
         val typedState = currentState as? S

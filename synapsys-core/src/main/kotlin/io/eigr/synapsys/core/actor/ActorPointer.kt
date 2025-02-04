@@ -25,7 +25,7 @@ import java.util.UUID
  * @see AskMessage
  * @see PendingRequests
  */
-class ActorPointer<M : Any>(private val actorId: String, private val executor: ActorExecutor<M>) {
+class ActorPointer<out M : Any>(private val actorId: String, private val executor: ActorExecutor<M>) {
     private val log = loggerFor(this::class.java)
 
     /**
@@ -48,14 +48,13 @@ class ActorPointer<M : Any>(private val actorId: String, private val executor: A
      * @sample
      * pointer.send(UpdateCount(5))
      */
-    suspend fun send(message: M) {
+    suspend fun send(message: @UnsafeVariance M) {
         log.debug("[ActorSystem] Sending message: {} to actor: {}", message, actorId)
         executor.send(message)
     }
 
     /**
      * Sends a message and awaits a response (request-response pattern).
-     *
      * @param message Message to send to the actor
      * @return Deferred result that will be completed by the actor's response
      * @throws TimeoutException If response not received within configured timeout
@@ -63,7 +62,7 @@ class ActorPointer<M : Any>(private val actorId: String, private val executor: A
      * @sample
      * val count = pointer.ask<Int>(GetCount())
      */
-    suspend fun <R : Any> ask(message: M): R {
+    suspend fun <R : Any> ask(message: @UnsafeVariance M): R {
         val requestId = UUID.randomUUID().toString()
         val responseDeferred = PendingRequests.createRequest<R>(requestId)
 

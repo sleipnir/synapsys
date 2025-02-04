@@ -60,7 +60,7 @@ fun main() = runBlocking {
                 MyActor(
                     id, initialState
                 )
-            } as ActorPointer<Any>
+            }
         }
     }
 

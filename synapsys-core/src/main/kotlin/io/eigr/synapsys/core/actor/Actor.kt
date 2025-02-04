@@ -1,5 +1,6 @@
 package io.eigr.synapsys.core.actor
 
+import io.eigr.synapsys.core.internals.loggerFor
 import io.eigr.synapsys.core.internals.persistence.Store
 
 /**
@@ -19,13 +20,13 @@ import io.eigr.synapsys.core.internals.persistence.Store
  * @see Context
  * @see Store
  */
-abstract class Actor<S : Any, M : Any, R>(val id: String?, initialState: S?) {
-
+abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialState: S?) {
+    private val log = loggerFor(Actor::class.java)
     /**
      * Current operational context containing the actor's state.
      * Initialized with either the provided initial state or loaded from persistence.
      */
-    var state: Context<S> = Context(initialState)
+    var state: Context<S> = Context(this.initialState)
 
     /**
      * Internal persistence mechanism for actor state.
@@ -50,8 +51,18 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, initialState: S?) {
      *
      * @throws IllegalStateException If id is null when attempting to load state
      */
-    internal suspend fun onStart()  {
-        this.state = Context(store?.load(id!!))
+    internal suspend fun rehydrate()  {
+        log.info("[{}] Rehydrating actor state", id)
+        val oldState = store?.load(id!!)
+        if (oldState != null) {
+            this.state = Context(oldState)
+            this.state
+        } else {
+            this.state = Context(this.initialState)
+            this.state
+        }
+
+        log.info("[{}] Rehydrated actor state: {}", id, state.state)
     }
 
     /**
