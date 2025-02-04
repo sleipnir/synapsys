@@ -7,6 +7,7 @@ import io.eigr.synapsys.core.internals.mailbox.Mailbox
 import io.eigr.synapsys.core.internals.mailbox.PendingRequests
 import io.eigr.synapsys.core.internals.supervisor.SupervisorMessage
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine

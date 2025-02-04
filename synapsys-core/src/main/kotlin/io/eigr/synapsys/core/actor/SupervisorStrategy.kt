@@ -8,7 +8,7 @@ enum class RestartStrategy {
 
 data class SupervisorStrategy(
     val kind: RestartStrategy = RestartStrategy.OneForOne,
-    val maxRetries: Int = 3,
+    val estimatedMaxRetries: Int = 3,
     val initialBackoffMillis: Long = 1000L,
     val maxBackoffMillis: Long = 10_000L
 )

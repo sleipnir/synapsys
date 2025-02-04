@@ -12,10 +12,72 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import kotlin.time.measureTime
 
+fun main() = runBlocking {
+    ActorSystem.create()
+
+    // Multi message Actor Example using ask pattern:
+    val actorPointer: ActorPointer<Message> = ActorSystem.actorOf(
+        "multi-message-actor", 0
+    ) { id, initialState -> MultiMessageActor(id, initialState) }
+
+    val helloResp = actorPointer.ask<String>(Hello("Hello", "Adriano"))
+    val byeResp = actorPointer.ask<String>(Bye("Tchau", "Adriano"))
+
+    println("Hello response $helloResp")
+    println("Bye response $byeResp")
+
+    // Custom Supervisor example:
+    val myCustomSupervisor = Supervisor(
+        "custom-supervisor",
+        strategy = SupervisorStrategy(RestartStrategy.OneForOne, estimatedMaxRetries = 10)
+    )
+
+    val failingActor = ActorSystem.actorOf(
+        id = "failing-actor",
+        initialState = 0,
+        myCustomSupervisor,
+    ) { id, state ->
+        object : Actor<Int, String, String>(id, state) {
+            override fun onReceive(message: String, ctx: Context<Int>): Pair<Context<Int>, String> {
+                println("Actor $id received: $message")
+                if ((0..2).random() == 0) {
+                    throw RuntimeException("Simulated failure")
+                }
+                return ctx.withState(ctx.state?.plus(1) ?: 0) to "Processed: $message"
+            }
+        }
+    }
+
+    repeat(1000) {
+        failingActor.send("Hello")
+    }
+
+    // Creation of many actors and async message passing example:
+    var actors = listOf<ActorPointer<Any>>()
+    val creationTime = measureTime {
+        actors = (0..80000).map { i ->
+            ActorSystem.actorOf("my-actor-$i", 0) { id, initialState ->
+                MyActor(
+                    id, initialState
+                )
+            } as ActorPointer<Any>
+        }
+    }
+
+    val executionTime = measureTime {
+        actors.forEach { actor ->
+            repeat(50) {
+                actor.send(Message("Hello"))
+            }
+        }
+    }
+    delay(120000)
+    println("Creation time: $creationTime")
+    println("Execution time: $executionTime")
+}
+
 open class Message(open val text: String?)
-
 class Hello(override val text: String?, val name: String) : Message(text)
-
 class Bye(override val text: String?, val name: String) : Message(text)
 
 class MultiMessageActor(id: String?, initialState: Int?) :
@@ -56,70 +118,4 @@ class MyActor(id: String?, initialState: Int?) : Actor<Int, Message, String>(id,
         return ctx to "Processed: ${message.text} with new state: ${newCtx.state}"
     }
 }
-
-fun main() = runBlocking {
-    ActorSystem.create()
-
-    /*val actorPointer: ActorPointer<Message> = ActorSystem.actorOf(
-        "multi-message-actor",
-        0
-    ) { id, initialState -> MultiMessageActor(id, initialState) }
-
-    val helloResp = actorPointer.ask<String>(Hello("Hello", "Adriano"))
-    val byeResp = actorPointer.ask<String>(Bye("Tchau", "Adriano"))
-
-    println("Hello response $helloResp")
-    println("Bye response $byeResp")*/
-
-    val myCustomSupervisor = Supervisor("custom-supervisor", strategy = SupervisorStrategy(RestartStrategy.OneForOne, maxRetries = 10))
-
-    val failingActor = ActorSystem.actorOf(
-        id = "failing-actor",
-        initialState = 0,
-        myCustomSupervisor,
-    ) { id, state ->
-        object : Actor<Int, String, String>(id, state) {
-            override fun onReceive(message: String, ctx: Context<Int>): Pair<Context<Int>, String> {
-                println("Actor $id received: $message")
-                if ((0..2).random() == 0) {
-                    throw RuntimeException("Simulated failure")
-                }
-                return ctx.withState(ctx.state?.plus(1) ?: 0) to "Processed: $message"
-            }
-        }
-    }
-
-    repeat(1000) {
-        failingActor.send("Hello")
-    }
-
-    /*var actors = listOf<ActorPointer<Any>>()
-    val creationTime = measureTime {
-        actors = (0..80000).map { i ->
-            ActorSystem.actorOf("my-actor-$i", 0) { id, initialState ->
-                MyActor(
-                    id,
-                    initialState
-                )
-            } as ActorPointer<Any>
-        }
-    }
-
-    val executionTime = measureTime {
-        actors.forEach { actor ->
-            repeat(50) {
-                actor.send(Message("Hello"))
-
-                // or use ask pattern
-                //val resp = actor.ask<String>(Message("Hello"))
-                //println("Actor response is $resp")
-            }
-        }
-    }
-*/
-    delay(120000)
-    //println("Creation time: $creationTime")
-    //println("Execution time: $executionTime")
-}
-
 

@@ -9,21 +9,65 @@ import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
 import io.eigr.synapsys.core.internals.scheduler.Scheduler
 import java.lang.reflect.Constructor
 
+/**
+ * Central entry point for creating and managing actors in the Synapsys framework.
+ * Provides factory methods for actor system initialization, actor creation, and dependency configuration.
+ *
+ * <h2>Key Responsibilities:</h2>
+ * <ul>
+ *   <li>System-wide configuration management</li>
+ *   <li>Actor lifecycle management</li>
+ *   <li>Dependency injection for persistence and messaging</li>
+ *   <li>Supervision hierarchy setup</li>
+ * </ul>
+ *
+ * @see Actor
+ * @see Supervisor
+ * @see Mailbox
+ * @see Store
+ */
 object ActorSystem {
     private val executors: MutableMap<String, ActorExecutor<*>> = mutableMapOf()
     private lateinit var scheduler: Scheduler
     private lateinit var config: Config
 
+    /**
+     * Initializes the actor system with default configuration.
+     * @throws IllegalStateException if called multiple times
+     */
     fun create() {
         config = Config()
         scheduler = Scheduler(config.maxReductions)
     }
 
+    /**
+     * Initializes the actor system with custom configuration.
+     * @param config Custom configuration parameters
+     * @throws IllegalStateException if called multiple times
+     */
     fun create(config: Config) {
         this.config = config
         scheduler = Scheduler(config.maxReductions)
     }
 
+    /**
+     * Creates and registers a new actor instance.
+     *
+     * @param id Unique identifier for the actor
+     * @param initialState Initial state value for the actor
+     * @param supervisor Optional supervision strategy (defaults to root supervisor)
+     * @param actorFactory Factory function for actor creation
+     * @return ActorPointer for message sending
+     * @throws IllegalStateException if system not initialized
+     *
+     * @sample
+     * val system = ActorSystem.create()
+     * val counterRef = system.actorOf("counter", 0) { id, state ->
+     *     object : Actor<Int, Command, Result>(id, state) {
+     *         override fun onReceive(msg: Command, ctx: Context<Int>) = ...
+     *     }
+     * }
+     */
     fun <S : Any, M : Any, R : Any> actorOf(
         id: String,
         initialState: S,
@@ -50,6 +94,10 @@ object ActorSystem {
         return ActorPointer(id, executor)
     }
 
+    /**
+     * @internal
+     * Factory method for actor execution components
+     */
     internal fun <S : Any, M : Any, R : Any> createActorExecutor(
         id: String,
         initialState: S,
@@ -66,6 +114,10 @@ object ActorSystem {
         return ActorExecutor(adapter, mailbox, supervisor?.getMessageChannel())
     }
 
+    /**
+     * @internal
+     * Creates a configured mailbox instance using reflection
+     */
     private fun <M : Any> createMailbox(config: Config): Mailbox<M> {
         val instance = createMailboxInstance<MailboxAbstractQueue<M>>(
             config.mailboxClass,
@@ -74,6 +126,10 @@ object ActorSystem {
         return Mailbox(queue = instance as MailboxAbstractQueue<M>)
     }
 
+    /**
+     * @internal
+     * Reflection-based instantiation of mailbox implementations
+     */
     private fun <T> createMailboxInstance(className: String, serializer: MessageSerializer): T? {
         return try {
             val clazz = Class.forName(className)
@@ -93,10 +149,18 @@ object ActorSystem {
         }
     }
 
+    /**
+     * @internal
+     * Creates a persistence store instance using reflection
+     */
     private fun <S : Any> createStore(storeClass: String): Store<S> {
         return createStoreInstance(storeClass, Store::class.java) as Store<S>
     }
 
+    /**
+     * @internal
+     * Reflection-based instantiation of store implementations
+     */
     private fun <S> createStoreInstance(className: String, superType: Class<S>): S? {
         return try {
             val clazz = Class.forName(className)

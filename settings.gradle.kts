@@ -17,3 +17,4 @@ rootProject.name = "synapsys"
 include("synapsys-bom")
 include("synapsys-core")
 include("synapsys-examples")
+include("synapsys-benchmarks")

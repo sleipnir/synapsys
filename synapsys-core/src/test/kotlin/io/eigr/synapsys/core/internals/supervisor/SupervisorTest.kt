@@ -5,7 +5,6 @@ import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
 import io.eigr.synapsys.core.internals.scheduler.Scheduler
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -31,7 +30,7 @@ class SupervisorTest {
         config = mockk<Config>()
 
         scheduler = mockk(relaxed = true)
-        supervisor = Supervisor("test-supervisor", SupervisorStrategy(maxRetries = 2))
+        supervisor = Supervisor("test-supervisor", SupervisorStrategy(estimatedMaxRetries = 2))
         supervisor.setScheduler(scheduler)
         supervisor.setConfig(config)
 

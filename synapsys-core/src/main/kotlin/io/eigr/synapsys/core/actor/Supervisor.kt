@@ -60,7 +60,7 @@ class Supervisor(
         val actorId = failedActor.actor.id
         val retries = failureCount.getOrDefault(actorId, 0)
 
-        if (retries >= strategy.maxRetries) {
+        if (retries >= strategy.estimatedMaxRetries) {
             log.error("[$id] Actor {} exceeded max retries. Removing from system.", actorId)
             children.remove(failedActor.actor.id)
             scheduler.removeActor(actorId)
