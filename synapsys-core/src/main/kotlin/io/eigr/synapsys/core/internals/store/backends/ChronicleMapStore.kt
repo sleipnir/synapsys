@@ -1,8 +1,10 @@
-package io.eigr.synapsys.core.internals.persistence
+package io.eigr.synapsys.core.internals.store.backends
 
+import io.eigr.synapsys.core.internals.store.Store
 import net.openhft.chronicle.map.ChronicleMap
 import java.io.File
 
+@Suppress("UNCHECKED_CAST")
 class ChronicleMapStore<S : Any>(
     private val valueClass: Class<S>,
     maxEntries: Long = 10_000,
@@ -21,8 +23,8 @@ class ChronicleMapStore<S : Any>(
         chronicleMap[id] = state
     }
 
-    override suspend fun load(id: String): S? {
-        return chronicleMap[id]
+    override suspend fun <S> load(id: String, clazz: Class<S>): S? {
+        return chronicleMap[id] as S
     }
 
     fun close() {

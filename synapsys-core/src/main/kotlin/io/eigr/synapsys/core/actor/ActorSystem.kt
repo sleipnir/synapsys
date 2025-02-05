@@ -4,7 +4,7 @@ import io.eigr.synapsys.core.internals.BaseActorAdapter
 import io.eigr.synapsys.core.internals.MessageSerializer
 import io.eigr.synapsys.core.internals.mailbox.Mailbox
 import io.eigr.synapsys.core.internals.mailbox.MailboxAbstractQueue
-import io.eigr.synapsys.core.internals.persistence.Store
+import io.eigr.synapsys.core.internals.store.Store
 import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
 import io.eigr.synapsys.core.internals.scheduler.Scheduler
 import java.lang.reflect.Constructor
@@ -92,9 +92,8 @@ object ActorSystem {
         supervisor?.setConfig(config)
         supervisor?.setScheduler(scheduler)
 
-        if (executors.putIfAbsent(id, executor) == null) {
-            scheduler.enqueue(executor)
-        }
+        executors.getOrPut(id) {executor}
+        scheduler.enqueue(executor)
 
         return ActorPointer(id, executor)
     }

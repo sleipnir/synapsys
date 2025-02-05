@@ -79,7 +79,12 @@ class Scheduler(
     fun removeActor(actorId: String): Boolean {
         val removed = actorExecutorQueues.any { queue ->
             val originalSize = queue.size
-            queue.removeIf { it.actor.id == actorId }
+            val iterator = queue.iterator()
+            while (iterator.hasNext()) {
+                if (iterator.next().actor.id == actorId) {
+                    iterator.remove()
+                }
+            }
             originalSize != queue.size
         }
 

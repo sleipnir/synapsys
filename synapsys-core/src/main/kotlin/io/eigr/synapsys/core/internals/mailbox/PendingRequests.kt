@@ -6,6 +6,7 @@ import kotlinx.coroutines.CompletableDeferred
 object PendingRequests {
     private val pendingResponses = ConcurrentHashMap<String, CompletableDeferred<Any>>()
 
+    @Suppress("UNCHECKED_CAST")
     fun <R> createRequest(id: String): CompletableDeferred<R> {
         val deferred = CompletableDeferred<R>()
         pendingResponses[id] = deferred as CompletableDeferred<Any>

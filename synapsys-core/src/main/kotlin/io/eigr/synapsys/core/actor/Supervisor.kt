@@ -47,6 +47,7 @@ data class ActorEntity<S : Any, M : Any, R : Any>(
  * @see RestartStrategy
  * @see ActorExecutor
  */
+@Suppress("UNCHECKED_CAST")
 class Supervisor(
     val id: String,
     private val strategy: SupervisorStrategy = SupervisorStrategy(),
@@ -109,7 +110,7 @@ class Supervisor(
      */
     private fun handleFailure(failedActor: ActorExecutor<*>, exception: Throwable) {
         val actorId = failedActor.actor.id
-        val retries = failureCount.getOrDefault(actorId, 0)
+        val retries = failureCount.getOrPut(actorId) {0}
 
         if (retries >= strategy.estimatedMaxRetries) {
             log.error("[{}] Actor {} exceeded max retries. Removing from system.", id, actorId)

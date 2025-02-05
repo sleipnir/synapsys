@@ -34,5 +34,13 @@ dependencies {
         api("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         api("io.mockk:mockk:1.13.16")
         api("org.junit.jupiter:junit-jupiter:5.11.0")
+
+        // Databases
+        api("androidx.room:room-ktx:2.6.1")
+        api("androidx.room:sqlite-ktx:2.4.0")
+        api("org.xerial:sqlite-jdbc:3.42.0.0")
+        api("mysql:mysql-connector-java:8.0.33")
+        api("org.postgresql:postgresql:42.7.5")
+        api("com.zaxxer:HikariCP:6.2.1")
     }
 }

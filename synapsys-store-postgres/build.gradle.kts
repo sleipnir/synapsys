@@ -1,7 +1,5 @@
 plugins {
-    id("application")
     id("org.jetbrains.kotlin.jvm") version "1.9.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
 }
 
 repositories {
@@ -12,6 +10,11 @@ kotlin {
     jvmToolchain(17)
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 dependencies {
     implementation(platform(project(":synapsys-bom")))
     implementation(project(":synapsys-core"))
@@ -20,13 +23,4 @@ dependencies {
     implementation("org.postgresql:postgresql")
     implementation("com.zaxxer:HikariCP")
     implementation("ch.qos.logback:logback-classic")
-}
-
-application {
-    mainClass.set("io.eigr.synapsys.examples.MainKt")
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }

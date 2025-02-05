@@ -15,6 +15,7 @@ class JavaMessageSerializer : MessageSerializer {
         return bos.toByteArray()
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun <T> deserialize(bytes: ByteArray, clazz: Class<T>): T {
         val bis = ByteArrayInputStream(bytes)
         ObjectInputStream(bis).use { return it.readObject() as T }

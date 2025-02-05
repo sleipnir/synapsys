@@ -98,7 +98,7 @@ class SchedulerTest {
         coEvery { mockActorExecutor.dequeueMessage() } returns "TestMessage"
 
         scheduler.enqueue(mockActorExecutor)
-        //testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 3) { mockActorExecutor.processMessage(any()) }
         coVerify { mockActorExecutor.suspendExecution() }

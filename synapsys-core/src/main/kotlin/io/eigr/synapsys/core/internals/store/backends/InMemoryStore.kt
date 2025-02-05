@@ -1,7 +1,9 @@
-package io.eigr.synapsys.core.internals.persistence
+package io.eigr.synapsys.core.internals.store.backends
 
+import io.eigr.synapsys.core.internals.store.Store
 import java.util.concurrent.ConcurrentHashMap
 
+@Suppress("UNCHECKED_CAST")
 class InMemoryStore<S : Any> : Store<S> {
     private val store = ConcurrentHashMap<String, S>()
 
@@ -9,7 +11,7 @@ class InMemoryStore<S : Any> : Store<S> {
         store[id] = state
     }
 
-    override suspend fun load(id: String): S? {
-        return store[id]
+    override suspend fun <S> load(id: String, clazz: Class<S>): S? {
+        return store[id] as S?
     }
 }

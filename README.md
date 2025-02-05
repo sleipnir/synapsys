@@ -1,5 +1,8 @@
 # Synapsys 🧠⚡
-A lightweight, fast, and efficient **stateful** [actor system]() for resource-constrained environments! (Working in progress)
+
+### **[Getting Started ](https://eigr-labs.github.io/synapsys/#quickstart-guide-)** • **[Website](https://eigr-labs.github.io/synapsys/)** • **[Documentation](https://eigr-labs.github.io/synapsys/docs/)** • **[Blog](https://eigr.io/blog/)**
+
+A lightweight, fast, and efficient **stateful** [actor system](https://www.youtube.com/watch?v=7erJ1DV_Tlo) for resource-constrained environments! (Working in progress)
 
 ## Why Synapsys? 🤔
 Unlike heavyweight frameworks like **[Akka]()**, or sidecar based actor model like **[Spawn](https://github.com/eigr/spawn)**, **[Dapr](https://dapr.io/)** and others, 
@@ -151,6 +154,12 @@ Synapsys is built for speed and efficiency. Here's what you get out of the box:
 Run the example and see the results for yourself! 🚀
 
 ---
+
+## Other alternatives
+
+If you need more advanced features, a business-oriented context, or support for environments beyond 
+the JVM and Android devices, consider using Spawn. While Synapsys excels as a lightweight actor library 
+for JVM-based applications, [Spawn](https://eigr.io/spawn/) offers a broader polyglot and distributed runtime for scalable, multi-environment deployments.
 
 ## Contributing 🤝
 

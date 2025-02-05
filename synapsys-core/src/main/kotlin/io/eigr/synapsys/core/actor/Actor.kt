@@ -1,7 +1,7 @@
 package io.eigr.synapsys.core.actor
 
 import io.eigr.synapsys.core.internals.loggerFor
-import io.eigr.synapsys.core.internals.persistence.Store
+import io.eigr.synapsys.core.internals.store.Store
 
 /**
  * Abstract base class representing an Actor in the Synapsys framework.
@@ -28,6 +28,8 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialSt
      */
     var state: Context<S> = Context(this.initialState)
 
+    private val stateClass: Class<S>? = initialState?.javaClass
+
     /**
      * Internal persistence mechanism for actor state.
      * Injected by the framework and available only after proper initialization.
@@ -53,7 +55,7 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialSt
      */
     internal suspend fun rehydrate()  {
         log.info("[{}] Rehydrating actor state", id)
-        val oldState = store?.load(id!!)
+        val oldState = store?.load(id!!, stateClass!!)
         if (oldState != null) {
             this.state = Context(oldState)
             this.state
