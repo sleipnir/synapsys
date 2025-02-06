@@ -1,10 +1,16 @@
 plugins {
     id("me.champeau.jmh") version "0.7.3"
-
 }
 
 repositories {
     mavenCentral()
+}
+
+sourceSets.main {
+    java.srcDirs("src")
+}
+sourceSets.test {
+    java.srcDirs("test")
 }
 
 dependencies {
@@ -22,5 +28,6 @@ jmh {
     iterations.set(10)
     fork.set(1)
     benchmarkMode.set(listOf("Throughput"))
-    includes = listOf(".*Benchmark.*")
+    verbosity = "EXTRA"
+    includes = listOf("io.eigr.synapsys.benchmarks.SynapsysBenchmark.kt")
 }

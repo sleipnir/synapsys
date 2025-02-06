@@ -36,11 +36,15 @@ dependencies {
         api("org.junit.jupiter:junit-jupiter:5.11.0")
 
         // Databases
-        api("androidx.room:room-ktx:2.6.1")
-        api("androidx.room:sqlite-ktx:2.4.0")
+        api("androidx.room:room-runtime:2.7.0-alpha13")
+        api("androidx.room:room-ktx:2.7.0-alpha13")
+        api("androidx.sqlite:sqlite-ktx:2.5.0-alpha13")
         api("org.xerial:sqlite-jdbc:3.42.0.0")
         api("mysql:mysql-connector-java:8.0.33")
         api("org.postgresql:postgresql:42.7.5")
         api("com.zaxxer:HikariCP:6.2.1")
+
+        // android
+        api("androidx.room:room-compiler:2.7.0-alpha13")
     }
 }

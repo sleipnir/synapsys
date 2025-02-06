@@ -5,7 +5,7 @@ import io.eigr.synapsys.core.internals.serialization.ProtobufMessageSerializer
 
 data class Config(
     val maxReductions: Int = 50,
-    val storeClass: String = "io.eigr.synapsys.core.internals.persistence.InMemoryStore",
+    val storeClass: String = "io.eigr.synapsys.core.internals.store.backends.InMemoryStore",
     val mailboxClass: String = "io.eigr.synapsys.core.internals.mailbox.transport.ChannelMailbox",
     val serializer: MessageSerializer = ProtobufMessageSerializer()
 )

@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.library") version "8.1.4"
-    id("org.jetbrains.kotlin.multiplatform") version "1.9.20"
+    id("com.android.library")
+    id("org.jetbrains.kotlin.multiplatform")
 }
 
 android {
@@ -14,6 +14,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 }
 
@@ -38,8 +42,10 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
+                implementation("androidx.room:room-runtime")
                 implementation("androidx.room:room-ktx")
                 implementation("androidx.sqlite:sqlite-ktx")
+                //ksp("androidx.room:room-compiler")
             }
         }
     }
