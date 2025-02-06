@@ -144,9 +144,18 @@ class Scheduler(
         while (isProcessable(actorExecutor, reductions)) {
             val message = actorExecutor.dequeueMessage()
             if (message != null) {
-                log.trace("Reduction counts {}", reductions)
+                val startTime = System.nanoTime()
                 actorExecutor.processMessage(message)
-                reductions++
+                val durationMs = (System.nanoTime() - startTime) / 1_000_000
+
+                val totalDuration = (durationMs / 10).toInt()
+
+                if (totalDuration <= 10) {
+                    reductions++
+                } else {
+                    reductions += 1 + (durationMs / 10).toInt()
+                }
+                log.trace("Reduction counts {}", reductions)
             }
         }
 
