@@ -44,7 +44,7 @@ class ActorExecutor<M : Any>(
      * @param message The message to be sent to the actor.
      */
     suspend fun send(message: M) {
-        log.debug("[ActorExecutor] Actor {} sending message: {}", _actor.id, message)
+        if (log.isDebugEnabled) log.debug("[ActorExecutor] Actor {} sending message: {}", _actor.id, message)
         _mailbox.send(message)
     }
 
@@ -74,58 +74,45 @@ class ActorExecutor<M : Any>(
      * @param message The message to be processed.
      */
     internal suspend fun processMessage(message: Any) {
-        log.debug(
-            "[ActorExecutor] Dispatching message to Actor {}. Message: {}",
-            _actor.id,
-            message
-        )
+        if (log.isDebugEnabled) log.debug("[ActorExecutor] Dispatching message to Actor {}. Message: {}", _actor.id, message)
+
         try {
+            val state = _actor.getState()
+
             when (message) {
                 is AskMessage<*> -> {
                     val (id, msg) = message
+                    val (result, newState) = _actor.processMessageUntyped(msg, state)
 
-                    val (result, newState) = _actor.processMessageUntyped(
-                        msg,
-                        _actor.getState()
-                    )
-
-                    log.debug(
-                        "[ActorExecutor] Actor {} processed ask message: {}, result: {}, current state: {}",
-                        _actor.id,
-                        message,
-                        result,
-                        newState
-                    )
+                    if (log.isDebugEnabled) {
+                        log.debug(
+                            "[ActorExecutor] Actor {} processed ask message: {}, result: {}, new state: {}",
+                            _actor.id, message, result, newState
+                        )
+                    }
 
                     PendingRequests.completeRequest(id, result)
                 }
-
                 else -> {
-                    val (result, newState) = _actor.processMessageUntyped(
-                        message,
-                        _actor.getState()
-                    )
-                    log.trace(
-                        "[ActorExecutor] Actor {} processed normal message: {}, result: {}, current state: {}",
-                        _actor.id,
-                        message,
-                        result,
-                        newState
-                    )
+                    val (result, newState) = _actor.processMessageUntyped(message, state)
+
+                    if (log.isTraceEnabled) {
+                        log.trace(
+                            "[ActorExecutor] Actor {} processed message: {}, result: {}, new state: {}",
+                            _actor.id, message, result, newState
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {
-            log.error(
-                "[ActorExecutor] Actor {} failed to process message: {}",
-                _actor.id,
-                message,
-                e
-            )
+            log.error("[ActorExecutor] Actor {} failed to process message: {}", _actor.id, message, e)
+
             if (message is AskMessage<*>) {
                 PendingRequests.failRequest(message.id, e)
             }
+
             isActive = false
-            supervisorChannel?.send(SupervisorMessage.ActorFailed(this, e))
+            supervisorChannel?.trySend(SupervisorMessage.ActorFailed(this, e))
         }
     }
 
@@ -136,9 +123,11 @@ class ActorExecutor<M : Any>(
      * The actor will remain in a suspended state until explicitly resumed.
      */
     internal suspend fun suspendExecution() {
+        if (continuation != null) return
+
         suspendCoroutine { cont ->
             continuation = cont
-            log.trace("[ActorExecutor] Actor {} suspended.", _actor.id)
+            if (log.isTraceEnabled) log.trace("[ActorExecutor] Actor {} suspended.", _actor.id)
         }
     }
 
@@ -149,13 +138,16 @@ class ActorExecutor<M : Any>(
      * If the actor was not suspended, a warning is logged.
      */
     internal fun resumeExecution() {
-        continuation?.resume(Unit)
-            ?: log.trace(
+        continuation?.let {
+            it.resume(Unit)
+            continuation = null
+            if (log.isTraceEnabled) log.trace("[ActorExecutor] Actor {} resumed.", _actor.id)
+        } ?: {
+            if (log.isTraceEnabled) log.trace(
                 "[ActorExecutor] WARNING: Tried to resume actor {} but it was not suspended.",
                 _actor.id
             )
-        continuation = null
-        log.trace("[ActorExecutor] Actor {} resumed.", _actor.id)
+        }
     }
 }
 

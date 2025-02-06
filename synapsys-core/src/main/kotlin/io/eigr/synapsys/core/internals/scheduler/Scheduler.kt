@@ -8,6 +8,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.TimeUnit
 
 /**
  * The `Scheduler` class is responsible for managing the execution of `ActorExecutor` instances
@@ -30,10 +32,14 @@ import java.util.concurrent.ConcurrentLinkedQueue
  *
  * @param maxReductions The maximum number of messages an actor can process before being suspended.
  * @param numWorkers The number of worker threads for actor execution (default: CPU core count).
+ * @param processTimeThresholdMs The time threshold in milliseconds beyond which additional reductions are added per exceeded interval (default: 10ms).
+ * @param timePenaltyFactor The multiplier applied per exceeded time interval to calculate additional reductions (default: 2).
  */
 class Scheduler(
     private val maxReductions: Int,
-    private val numWorkers: Int = Runtime.getRuntime().availableProcessors()
+    private val numWorkers: Int = Runtime.getRuntime().availableProcessors(),
+    private val processTimeThresholdMs: Long = 10,
+    private val timePenaltyFactor: Int = 2
 ) {
     private val log = loggerFor(this::class.java)
 
@@ -63,11 +69,9 @@ class Scheduler(
      * @param actorExecutor The actor executor to be scheduled for execution.
      */
     fun enqueue(actorExecutor: ActorExecutor<*>) {
-        val workerIndex = (0 until numWorkers).random()
-        log.trace("[Scheduler] Enqueuing actor {} to worker {}", actorExecutor.actor.id, workerIndex)
-
+        // ThreadLocalRandom avoid unnecessary object creations
         actorExecutor.resumeExecution()
-        actorExecutorQueues[workerIndex].offer(actorExecutor)
+        actorExecutorQueues[ThreadLocalRandom.current().nextInt(numWorkers)].offer(actorExecutor)
     }
 
     /**
@@ -77,33 +81,27 @@ class Scheduler(
      * @return `true` if the actor was found and removed, `false` otherwise.
      */
     fun removeActor(actorId: String): Boolean {
-        val removed = actorExecutorQueues.any { queue ->
-            val originalSize = queue.size
+        // This imperative code reduces memory allocations
+        var removed = false
+        for (queue in actorExecutorQueues) {
             val iterator = queue.iterator()
             while (iterator.hasNext()) {
                 if (iterator.next().actor.id == actorId) {
                     iterator.remove()
+                    removed = true
                 }
             }
-            originalSize != queue.size
         }
-
-        return if (removed) {
-            log.info("[Scheduler] Removed actor {} from scheduler", actorId)
-            true
-        } else {
-            log.warn("[Scheduler] Actor {} not found in scheduler", actorId)
-            false
-        }
+        if (removed) log.info("[Scheduler] Removed actor {} from scheduler", actorId)
+        else if (log.isWarnEnabled) log.warn("[Scheduler] Actor {} not found in scheduler", actorId)
+        return removed
     }
 
     /**
      * Clears all worker queues, removing all scheduled actor executors.
      */
     fun cleanAllWorkerQueues() {
-        actorExecutorQueues.forEach { queue ->
-            queue.clear()
-        }
+        actorExecutorQueues.forEach { it.clear() }
         log.info("[Scheduler] All worker queues cleared")
     }
 
@@ -116,16 +114,11 @@ class Scheduler(
      */
     private suspend fun workerLoop(workerId: Int) {
         val queue = actorExecutorQueues[workerId]
-
         while (true) {
             val actorExecutor = queue.poll() ?: stealWork(workerId)
-            if (actorExecutor != null) {
-                scope.launch {
-                    processActor(actorExecutor)
-                }
-            } else {
-                delay(10) // Small delay to prevent busy-waiting.
-            }
+            actorExecutor?.let {
+                scope.launch { processActor(actorExecutor) }
+            } ?: delay(10) // Small delay to prevent busy-waiting.
         }
     }
 
@@ -138,35 +131,33 @@ class Scheduler(
      */
     private suspend fun processActor(actorExecutor: ActorExecutor<*>) {
         var reductions = 0
-        log.trace("Process {}. IsActive {}. Has Message {}", actorExecutor.actor.id, actorExecutor.isActive, actorExecutor.hasMessages())
+        if (log.isTraceEnabled) log.trace("Process {}. IsActive {}. Has Message {}", actorExecutor.actor.id, actorExecutor.isActive, actorExecutor.hasMessages())
         actorExecutor.resumeExecution()
 
         while (isProcessable(actorExecutor, reductions)) {
-            val message = actorExecutor.dequeueMessage()
-            if (message != null) {
-                val startTime = System.nanoTime()
-                actorExecutor.processMessage(message)
-                val durationMs = (System.nanoTime() - startTime) / 1_000_000
+            val message = actorExecutor.dequeueMessage() ?: break
 
-                val totalDuration = (durationMs / 10).toInt()
+            log.trace("[Scheduler] Previous reduction counts {}", reductions)
+            val startTime = System.nanoTime()
+            actorExecutor.processMessage(message)
+            val durationNs = System.nanoTime() - startTime
 
-                if (totalDuration <= 10) {
-                    reductions++
-                } else {
-                    reductions += 1 + (durationMs / 10).toInt()
-                }
-                log.trace("Reduction counts {}", reductions)
+            if (TimeUnit.NANOSECONDS.toMillis(durationNs) <= processTimeThresholdMs) {
+                reductions++
+            } else {
+                reductions += 1 + ((durationNs / (processTimeThresholdMs * 1_000_000L)) * timePenaltyFactor).toInt()
+                if (log.isDebugEnabled) log.debug("[Scheduler] Added {} reductions for message (took {} ns)", reductions, durationNs)
             }
         }
 
         if (isNotProcessable(actorExecutor, reductions)) {
-            log.trace(
+            if (log.isTraceEnabled) log.trace(
                 "[Scheduler] Has messages: {}. Reductions: {}. Max reductions: {}",
                 actorExecutor.hasMessages(),
                 reductions,
                 maxReductions
             )
-            log.trace(
+            if (log.isTraceEnabled) log.trace(
                 "[Scheduler] Suspending actor {} on Thread: {}",
                 actorExecutor.actor.id,
                 Thread.currentThread()
@@ -177,7 +168,7 @@ class Scheduler(
             }
 
             enqueue(actorExecutor)
-            log.trace(
+            if (log.isTraceEnabled) log.trace(
                 "[Scheduler] Enqueued actor {} from Thread: {}",
                 actorExecutor.actor.id,
                 Thread.currentThread()
@@ -215,15 +206,10 @@ class Scheduler(
      * @return The stolen `ActorExecutor` if available, otherwise `null`.
      */
     internal fun stealWork(workerId: Int): ActorExecutor<*>? {
-        actorExecutorQueues.indices.forEach { otherWorkerId ->
-            if (otherWorkerId != workerId) {
-                log.debug(
-                    "[Scheduler] Worker sScheduler {} stealing work from {}",
-                    workerId,
-                    otherWorkerId
-                )
-                val stolen = actorExecutorQueues[otherWorkerId].poll()
-                if (stolen != null) return stolen
+        // This imperative code reduces memory allocations
+        for (i in actorExecutorQueues.indices) {
+            if (i != workerId) {
+                actorExecutorQueues[i].poll()?.let { return it }
             }
         }
         return null
