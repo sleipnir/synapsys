@@ -11,6 +11,8 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+
+
 /**
  * The `ActorExecutor` class is responsible for managing the execution of an actor
  * within the system. It interacts with the actor's mailbox, processes messages,
@@ -24,8 +26,13 @@ import kotlin.coroutines.suspendCoroutine
 class ActorExecutor<M : Any>(
     private val _actor: BaseActor,
     private val _mailbox: Mailbox<M>,
-    private val supervisorChannel: Channel<SupervisorMessage>? = null
+    private val supervisorChannel: Channel<SupervisorMessage>? = null,
+    val priority: Priority = Priority.NORMAL
 ) {
+
+    enum class Priority {
+        HIGH, NORMAL
+    }
     private val log = loggerFor(this::class.java)
     private var continuation: Continuation<Unit>? = null
 
