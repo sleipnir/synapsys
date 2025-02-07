@@ -85,6 +85,7 @@ class MultiMessageActor(id: String?, initialState: Int?) :
     override fun onReceive(message: Message, ctx: Context<Int>): Pair<Context<Int>, String> {
         when (message) {
             is Hello -> {
+                ctx.state.let {  }
                 val newCtx = ctx.withState(ctx.state!! + 1)
                 return ctx to "Hello ${message.name} with new state: ${newCtx.state}"
             }

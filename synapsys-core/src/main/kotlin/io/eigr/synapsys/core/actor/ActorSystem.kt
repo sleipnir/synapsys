@@ -7,6 +7,7 @@ import io.eigr.synapsys.core.internals.mailbox.MailboxAbstractQueue
 import io.eigr.synapsys.core.internals.store.Store
 import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
 import io.eigr.synapsys.core.internals.scheduler.Scheduler
+import io.eigr.synapsys.core.internals.scheduler.WorkingStealingScheduler
 import java.lang.reflect.Constructor
 
 /**
@@ -37,7 +38,7 @@ object ActorSystem {
      */
     fun create() {
         config = Config()
-        scheduler = Scheduler(config.maxReductions)
+        scheduler = WorkingStealingScheduler(config.maxReductions)
     }
 
     /**
@@ -47,7 +48,18 @@ object ActorSystem {
      */
     fun create(config: Config) {
         this.config = config
-        scheduler = Scheduler(config.maxReductions)
+        scheduler = WorkingStealingScheduler(config.maxReductions)
+    }
+
+    /**
+     * Initializes the actor system with custom configuration and custom Scheduler.
+     * @param config Custom configuration parameters
+     * @param scheduler Custom Scheduler implementation
+     * @throws IllegalStateException if called multiple times
+     */
+    fun create(config: Config, scheduler: Scheduler) {
+        this.config = config
+        this.scheduler = scheduler
     }
 
     /**
@@ -111,9 +123,11 @@ object ActorSystem {
         mailbox: Mailbox<out M> = createMailbox(config)
         ): ActorExecutor<out M> {
         val actor = actorFactory(id, initialState)
+        actor.system = this
+        actor.state = Context(initialState, this)
         actor.store = createStore(config.storeClass)
 
-        val adapter = BaseActorAdapter(actor)
+        val adapter = BaseActorAdapter(actor, this)
 
         return ActorExecutor(adapter, mailbox, supervisor?.getMessageChannel())
     }

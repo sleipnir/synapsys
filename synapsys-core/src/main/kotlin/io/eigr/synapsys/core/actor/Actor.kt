@@ -22,13 +22,13 @@ import io.eigr.synapsys.core.internals.store.Store
  */
 abstract class Actor<S : Any, M : Any, R>(val id: String?, var initialState: S?) {
     private val log = loggerFor(Actor::class.java)
-    private lateinit var system: ActorSystem
+    lateinit var system: ActorSystem
 
     /**
      * Current operational context containing the actor's state.
      * Initialized with either the provided initial state or loaded from persistence.
      */
-    var state: Context<S> = Context(this.initialState, system)
+    internal var state: Context<S>? = null
 
     private val stateClass: Class<S>? = initialState?.javaClass
 
@@ -72,7 +72,7 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, var initialState: S?)
             this.state
         }
 
-        log.info("[{}] Rehydrated actor state: {}", id, state.state)
+        log.info("[{}] Rehydrated actor state: {}", id, state!!.state)
     }
 
     /**

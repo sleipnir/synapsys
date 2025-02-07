@@ -21,9 +21,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @ExperimentalCoroutinesApi
-class SchedulerTest {
+class WorkingStealingSchedulerTest {
     private val testDispatcher = StandardTestDispatcher()
-    private lateinit var scheduler: Scheduler
+    private lateinit var scheduler: WorkingStealingScheduler
     private lateinit var mockActorExecutor: ActorExecutor<*>
 
     @BeforeEach
@@ -41,7 +41,7 @@ class SchedulerTest {
     @Test
     fun `should initialize with correct number of workers`() {
         val numWorkers = 4
-        scheduler = Scheduler(
+        scheduler = WorkingStealingScheduler(
             maxReductions = 10,
             numWorkers = numWorkers
         )
@@ -52,7 +52,7 @@ class SchedulerTest {
     @Test
     fun `enqueue should add actor to random worker queue`() = runTest {
         scheduler =
-            Scheduler(maxReductions = 10, numWorkers = 2)
+            WorkingStealingScheduler(maxReductions = 10, numWorkers = 2)
         val fixedIndex = 0
         val random = mockk<Random>()
         every { random.nextInt(any()) } returns fixedIndex
@@ -65,7 +65,7 @@ class SchedulerTest {
 
     @Test
     fun `worker should process own queue items`() = runTest {
-        scheduler = Scheduler(maxReductions = 2, numWorkers = 1)
+        scheduler = WorkingStealingScheduler(maxReductions = 2, numWorkers = 1)
         every { mockActorExecutor.hasMessages() } returns true
         coEvery { mockActorExecutor.dequeueMessage() } returns "TestMessage"
 
@@ -78,7 +78,7 @@ class SchedulerTest {
 
     @Test
     fun `should steal work from other workers`() = runTest {
-        scheduler = Scheduler(maxReductions = 2, numWorkers = 2)
+        scheduler = WorkingStealingScheduler(maxReductions = 2, numWorkers = 2)
         scheduler.actorExecutorQueues[1].add(mockActorExecutor)
         scheduler.actorExecutorQueues[1].add(mockActorExecutor)
         scheduler.actorExecutorQueues[1].add(mockActorExecutor)
@@ -93,7 +93,7 @@ class SchedulerTest {
     @Test
     fun `should stop processing when reaching max reductions`() = runTest {
         // TODO: check this test
-        scheduler = Scheduler(maxReductions = 3, numWorkers = 1)
+        scheduler = WorkingStealingScheduler(maxReductions = 3, numWorkers = 1)
         every { mockActorExecutor.hasMessages() } returns true
         coEvery { mockActorExecutor.dequeueMessage() } returns "TestMessage"
 
@@ -106,7 +106,7 @@ class SchedulerTest {
 
     @Test
     fun `should re-enqueue actor after processing`() = runTest {
-        scheduler = Scheduler(maxReductions = 1, numWorkers = 1)
+        scheduler = WorkingStealingScheduler(maxReductions = 1, numWorkers = 1)
         every { mockActorExecutor.hasMessages() } returns true
         coEvery { mockActorExecutor.dequeueMessage() } returns "TestMessage"
 
@@ -118,7 +118,7 @@ class SchedulerTest {
 
     @Test
     fun `should handle empty queues gracefully`() = runTest {
-        scheduler = Scheduler(maxReductions = 10, numWorkers = 2)
+        scheduler = WorkingStealingScheduler(maxReductions = 10, numWorkers = 2)
 
         val result = scheduler.stealWork(0)
 
@@ -127,7 +127,7 @@ class SchedulerTest {
 
     @Test
     fun `should resume execution before processing`() = runTest {
-        scheduler = Scheduler(maxReductions = 1, numWorkers = 1)
+        scheduler = WorkingStealingScheduler(maxReductions = 1, numWorkers = 1)
         coEvery { mockActorExecutor.hasMessages() } returns true
         coEvery { mockActorExecutor.dequeueMessage() } returns "TestMessage"
 
@@ -139,7 +139,7 @@ class SchedulerTest {
 
     @Test
     fun `should handle actors without messages`() = runTest {
-        scheduler = Scheduler(maxReductions = 10, numWorkers = 1)
+        scheduler = WorkingStealingScheduler(maxReductions = 10, numWorkers = 1)
         every { mockActorExecutor.hasMessages() } returns false
 
         scheduler.enqueue(mockActorExecutor)
