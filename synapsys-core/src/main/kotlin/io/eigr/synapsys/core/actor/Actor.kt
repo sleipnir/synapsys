@@ -20,13 +20,15 @@ import io.eigr.synapsys.core.internals.store.Store
  * @see Context
  * @see Store
  */
-abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialState: S?) {
+abstract class Actor<S : Any, M : Any, R>(val id: String?, var initialState: S?) {
     private val log = loggerFor(Actor::class.java)
+    private lateinit var system: ActorSystem
+
     /**
      * Current operational context containing the actor's state.
      * Initialized with either the provided initial state or loaded from persistence.
      */
-    var state: Context<S> = Context(this.initialState)
+    var state: Context<S> = Context(this.initialState, system)
 
     private val stateClass: Class<S>? = initialState?.javaClass
 
@@ -36,6 +38,12 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialSt
      * @see Store
      */
     internal var store: Store<S>? = null
+
+    open fun onStart(ctx: Context<S>): Context<S> {
+        return ctx
+    }
+
+    open fun onStop() {}
 
     /**
      * Core message handling method that must be implemented by concrete actors.
@@ -57,10 +65,10 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialSt
         log.info("[{}] Rehydrating actor state", id)
         val oldState = store?.load(id!!, stateClass!!)
         if (oldState != null) {
-            this.state = Context(oldState)
+            this.state = Context(oldState, system)
             this.state
         } else {
-            this.state = Context(this.initialState)
+            this.state = Context(this.initialState, system)
             this.state
         }
 
@@ -75,7 +83,7 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialSt
      * @throws IllegalStateException If id is null when attempting to save state
      */
     internal suspend fun mutate(state: S): S {
-        this.state = Context(state)
+        this.state = Context(state, system)
         store?.save(id!!, state)
         return state
     }
