@@ -6,9 +6,9 @@ import io.eigr.synapsys.core.actor.Context
 import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
 import io.eigr.synapsys.core.internals.scheduler.Scheduler
 import io.eigr.synapsys.core.internals.scheduler.WorkingStealingScheduler
+import io.eigr.synapsys.extensions.android.sensors.actor.CameraActor
+import io.eigr.synapsys.extensions.android.sensors.actor.LocationActor
 import io.eigr.synapsys.extensions.android.sensors.actor.SensorActor
-import io.eigr.synapsys.extensions.android.sensors.events.SensorData
-
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,6 +26,17 @@ class AndroidScheduler(config: Config) : Scheduler {
                 sensorActors[actorExecutor.actor.id] = actorExecutor
                 handleSensorActor(actor)
             }
+
+            is LocationActor<*, *> -> {
+                sensorActors[actorExecutor.actor.id] = actorExecutor
+                handleSensorActor(actor)
+            }
+
+            is CameraActor<*, *> -> {
+                sensorActors[actorExecutor.actor.id] = actorExecutor
+                handleSensorActor(actor)
+            }
+
             else -> workingStealingScheduler.enqueue(actorExecutor)
         }
     }
@@ -48,15 +59,36 @@ class AndroidScheduler(config: Config) : Scheduler {
         this._system = actorSystem
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <S : Any> handleSensorActor(sensorActor: SensorActor<S, *>) {
+    private fun <S : Any> handleSensorActor(actor: CameraActor<S, *>) {
         val ctx = Context(
-            internalState = sensorActor.initialState,
+            internalState = actor.initialState,
             actorSystem = _system
         )
 
         sensorScope.launch {
-            (sensorActor as SensorActor<S, SensorData>).onStart(ctx)
+            actor.onStart(ctx)
+        }
+    }
+
+    private fun <S : Any> handleSensorActor(actor: LocationActor<S, *>) {
+        val ctx = Context(
+            internalState = actor.initialState,
+            actorSystem = _system
+        )
+
+        sensorScope.launch {
+            actor.onStart(ctx)
+        }
+    }
+
+    private fun <S : Any> handleSensorActor(actor: SensorActor<S, *>) {
+        val ctx = Context(
+            internalState = actor.initialState,
+            actorSystem = _system
+        )
+
+        sensorScope.launch {
+            actor.onStart(ctx)
         }
     }
 }

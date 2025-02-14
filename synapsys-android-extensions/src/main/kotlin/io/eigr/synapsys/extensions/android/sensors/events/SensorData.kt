@@ -1,5 +1,7 @@
 package io.eigr.synapsys.extensions.android.sensors.events
 
+import android.hardware.camera2.CameraCharacteristics
+
 sealed class SensorData{
     abstract val timestamp: Long
 
@@ -27,7 +29,7 @@ sealed class SensorData{
         override val timestamp: Long
     ) : SensorData()
 
-    data class GpsData(
+    data class LocationData(
         val latitude: Double,
         val longitude: Double,
         val altitude: Double? = null,
@@ -36,22 +38,6 @@ sealed class SensorData{
         val bearing: Float? = null,
         override val timestamp: Long
     ) : SensorData() {
-
-        /*override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Gps
-
-            return latitude == other.latitude &&
-                    longitude == other.longitude &&
-                    altitude == other.altitude &&
-                    accuracy == other.accuracy &&
-                    speed == other.speed &&
-                    bearing == other.bearing &&
-                    timestamp == other.timestamp
-        }*/
-
         override fun hashCode(): Int {
             var result = latitude.hashCode()
             result = 31 * result + longitude.hashCode()
@@ -61,6 +47,23 @@ sealed class SensorData{
             result = 31 * result + (bearing?.hashCode() ?: 0)
             result = 31 * result + timestamp.hashCode()
             return result
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as LocationData
+
+            if (latitude != other.latitude) return false
+            if (longitude != other.longitude) return false
+            if (altitude != other.altitude) return false
+            if (accuracy != other.accuracy) return false
+            if (speed != other.speed) return false
+            if (bearing != other.bearing) return false
+            if (timestamp != other.timestamp) return false
+
+            return true
         }
     }
 
@@ -73,6 +76,52 @@ sealed class SensorData{
             var result = sensorType
             result = 31 * result + values.contentHashCode()
             result = 31 * result + timestamp.hashCode()
+            return result
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as RawSensorData
+
+            if (sensorType != other.sensorType) return false
+            if (!values.contentEquals(other.values)) return false
+            if (timestamp != other.timestamp) return false
+
+            return true
+        }
+    }
+
+    data class CameraSensorFrameData(
+        val data: ByteArray,
+        val timestamp: Long,
+        val format: Int,
+        val resolution: Pair<Int, Int>,
+        val fps: Double,
+        val characteristics: CameraCharacteristics?
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as CameraSensorFrameData
+
+            if (!data.contentEquals(other.data)) return false
+            if (timestamp != other.timestamp) return false
+            if (format != other.format) return false
+            if (resolution != other.resolution) return false
+            if (fps != other.fps) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = data.contentHashCode()
+            result = 31 * result + timestamp.hashCode()
+            result = 31 * result + format
+            result = 31 * result + resolution.hashCode()
+            result = 31 * result + fps.hashCode()
             return result
         }
     }
