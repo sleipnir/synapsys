@@ -36,9 +36,10 @@ object ActorSystem {
      * Initializes the actor system with default configuration.
      * @throws IllegalStateException if called multiple times
      */
-    fun create() {
+    fun create(): ActorSystem {
         config = Config()
         scheduler = WorkingStealingScheduler(config.maxReductions)
+        return this
     }
 
     /**
@@ -46,9 +47,10 @@ object ActorSystem {
      * @param config Custom configuration parameters
      * @throws IllegalStateException if called multiple times
      */
-    fun create(config: Config) {
+    fun create(config: Config): ActorSystem {
         this.config = config
         scheduler = WorkingStealingScheduler(config.maxReductions)
+        return this
     }
 
     /**
@@ -57,9 +59,11 @@ object ActorSystem {
      * @param scheduler Custom Scheduler implementation
      * @throws IllegalStateException if called multiple times
      */
-    fun create(config: Config, scheduler: Scheduler) {
+    fun create(config: Config, scheduler: Scheduler): ActorSystem {
         this.config = config
         this.scheduler = scheduler
+        this.scheduler.setSystem(this)
+        return this
     }
 
     /**

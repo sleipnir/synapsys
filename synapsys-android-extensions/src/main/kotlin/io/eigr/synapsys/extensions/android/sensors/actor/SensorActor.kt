@@ -9,6 +9,7 @@ import io.eigr.synapsys.core.actor.ActorPointer
 import io.eigr.synapsys.extensions.android.sensors.events.SensorData
 import io.eigr.synapsys.extensions.android.sensors.internals.ActorHandler
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 import android.content.Context as AndroidContext
 import io.eigr.synapsys.core.actor.Context as ActorContext
 
@@ -24,16 +25,20 @@ open class SensorActor<S : Any, M : SensorData>(
 ),
     SensorEventListener {
 
+        private val log = LoggerFactory.getLogger(SensorActor::class.java)
+
     private val sensorManager by lazy {
         androidContext.getSystemService(AndroidContext.SENSOR_SERVICE) as SensorManager
     }
 
-    private lateinit var targetActor: ActorPointer<*>
+    private var targetActor: ActorPointer<*>? = null
 
     override fun onStart(ctx: ActorContext<S>): ActorContext<S> {
+        log.info("Registering sensor {}", sensorType)
         targetActor = ctx.system.actorOf(
             id = "processor-$id",
-            initialState = initialState!!) {id, state -> ActorHandler(id, state) }
+            initialState = initialState!!
+        ) { id, state -> ActorHandler<S, M>(id, state).apply { parentActor = this@SensorActor } }
 
         val sensor = sensorManager.getDefaultSensor(sensorType)
         sensor?.let {
@@ -50,7 +55,7 @@ open class SensorActor<S : Any, M : SensorData>(
     }
 
     override fun onReceive(message: M, ctx: ActorContext<S>): Pair<ActorContext<S>, Unit> {
-        return ctx to Unit
+        return this.onReceive(message, ctx)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -82,7 +87,9 @@ open class SensorActor<S : Any, M : SensorData>(
             )
         }
 
-        runBlocking { targetActor.send(message as M) }
+        runBlocking {
+            targetActor?.send(message as M)
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}

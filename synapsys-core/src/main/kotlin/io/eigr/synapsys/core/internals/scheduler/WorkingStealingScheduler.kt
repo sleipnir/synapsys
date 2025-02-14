@@ -1,5 +1,6 @@
 package io.eigr.synapsys.core.internals.scheduler
 
+import io.eigr.synapsys.core.actor.ActorSystem
 import io.eigr.synapsys.core.internals.loggerFor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -121,6 +122,11 @@ class WorkingStealingScheduler(
         actorExecutorQueues.forEach { it.clear() }
         log.info("[Scheduler] All worker queues cleared")
     }
+
+    /**
+     * Optional set ActorSystem.
+     */
+    override fun setSystem(actorSystem: ActorSystem) {}
 
     /**
      * @internal

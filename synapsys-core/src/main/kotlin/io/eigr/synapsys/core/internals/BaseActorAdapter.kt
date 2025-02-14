@@ -5,19 +5,22 @@ import io.eigr.synapsys.core.actor.ActorSystem
 import io.eigr.synapsys.core.actor.Context
 
 class BaseActorAdapter<S : Any, M : Any, R>(
-    private val actor: Actor<S, M, R>,
+    private val _actor: Actor<S, M, R>,
     private val actorSystem: ActorSystem
 ) :
     BaseActor {
 
     override val id: String
-        get() = actor.id!!
+        get() = _actor.id!!
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <S : Any, M : Any, R : Any> getActor(): Actor<S, M, R> = _actor as Actor<S, M, R>
 
     override suspend fun getState(): S? {
-        return actor.state?.state
+        return _actor.state?.state
     }
 
-    override suspend fun rehydrate() = actor.rehydrate()
+    override suspend fun rehydrate() = _actor.rehydrate()
 
     override suspend fun processMessageUntyped(message: Any, currentState: Any?): Pair<Any?, Any?> {
         @Suppress("UNCHECKED_CAST")
@@ -33,7 +36,7 @@ class BaseActorAdapter<S : Any, M : Any, R>(
             ?: throw IllegalArgumentException("Actor $id received a message of invalid type.")
 
         val ctx: Context<S> = Context(typedState, actorSystem)
-        val (newCtx, result) = actor.onReceive(typedMessage, ctx)
-        return Pair(result, newCtx.state?.let { actor.mutate(it) })
+        val (newCtx, result) = _actor.onReceive(typedMessage, ctx)
+        return Pair(result, newCtx.state?.let { _actor.mutate(it) })
     }
 }
