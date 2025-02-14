@@ -12,13 +12,17 @@ package io.eigr.synapsys.core.actor
  *
  * @see Actor
  */
-class Context<S : Any>(private var internalState: S?) {
+class Context<S : Any>(private var internalState: S?, private val actorSystem : ActorSystem) {
 
     /**
      * Read-only access to the current state value.
      * Returns null if state hasn't been initialized.
      */
     val state get() = internalState
+
+
+
+    val system get() = actorSystem
 
     /**
      * Creates a new Context instance with updated state while maintaining immutability.

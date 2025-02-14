@@ -45,7 +45,6 @@ kotlin {
                 implementation("androidx.room:room-runtime")
                 implementation("androidx.room:room-ktx")
                 implementation("androidx.sqlite:sqlite-ktx")
-                //ksp("androidx.room:room-compiler")
             }
         }
     }

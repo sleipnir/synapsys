@@ -2,6 +2,7 @@ package io.eigr.synapsys.core.actor
 
 import io.eigr.synapsys.core.internals.loggerFor
 import io.eigr.synapsys.core.internals.store.Store
+import io.eigr.synapsys.core.internals.store.backends.InMemoryStore
 
 /**
  * Abstract base class representing an Actor in the Synapsys framework.
@@ -16,26 +17,37 @@ import io.eigr.synapsys.core.internals.store.Store
  * @constructor Creates an Actor instance with optional initial state.
  * @param id Optional unique identifier for the actor. Required if state persistence is used.
  * @param initialState Initial state of the actor. Can be null for stateless actors or state initialization via persistence.
+ * @param store Optional persistence mechanism for the actor's state. Defaults to [InMemoryStore].
  *
  * @see Context
  * @see Store
  */
-abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialState: S?) {
+abstract class Actor<S : Any, M : Any, R>(val id: String?, var initialState: S?, var store: Store<S>? = InMemoryStore()) {
     private val log = loggerFor(Actor::class.java)
+    lateinit var system: ActorSystem
+
     /**
      * Current operational context containing the actor's state.
      * Initialized with either the provided initial state or loaded from persistence.
      */
-    var state: Context<S> = Context(this.initialState)
+    internal var state: Context<S>? = null
 
+    /**
+     * stores java class of state
+     */
     private val stateClass: Class<S>? = initialState?.javaClass
 
     /**
-     * Internal persistence mechanism for actor state.
-     * Injected by the framework and available only after proper initialization.
-     * @see Store
+     * Lifecycle hook called when actor is about to start.
      */
-    internal var store: Store<S>? = null
+    open fun onStart(ctx: Context<S>): Context<S> {
+        return ctx
+    }
+
+    /**
+     * Lifecycle hook called when actor is about to stop.
+     */
+    open fun onStop() {}
 
     /**
      * Core message handling method that must be implemented by concrete actors.
@@ -57,14 +69,14 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialSt
         log.info("[{}] Rehydrating actor state", id)
         val oldState = store?.load(id!!, stateClass!!)
         if (oldState != null) {
-            this.state = Context(oldState)
+            this.state = Context(oldState, system)
             this.state
         } else {
-            this.state = Context(this.initialState)
+            this.state = Context(this.initialState, system)
             this.state
         }
 
-        log.info("[{}] Rehydrated actor state: {}", id, state.state)
+        log.info("[{}] Rehydrated actor state: {}", id, state!!.state)
     }
 
     /**
@@ -75,7 +87,7 @@ abstract class Actor<S : Any, M : Any, R>(val id: String?, private var initialSt
      * @throws IllegalStateException If id is null when attempting to save state
      */
     internal suspend fun mutate(state: S): S {
-        this.state = Context(state)
+        this.state = Context(state, system)
         store?.save(id!!, state)
         return state
     }

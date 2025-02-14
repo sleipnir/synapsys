@@ -2,7 +2,7 @@ package io.eigr.synapsys.core.internals.supervisor
 
 import io.eigr.synapsys.core.actor.*
 import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
-import io.eigr.synapsys.core.internals.scheduler.Scheduler
+import io.eigr.synapsys.core.internals.scheduler.WorkingStealingScheduler
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -21,7 +21,7 @@ class MockActor(id: String, state: MockState) : Actor<MockState, MockMessage, Mo
 class SupervisorTest {
 
     private lateinit var supervisor: Supervisor
-    private lateinit var scheduler: Scheduler
+    private lateinit var scheduler: WorkingStealingScheduler
     private lateinit var mockActor: ActorExecutor<MockMessage>
     private lateinit var config: Config
 

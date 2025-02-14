@@ -7,6 +7,7 @@ import io.eigr.synapsys.core.internals.mailbox.MailboxAbstractQueue
 import io.eigr.synapsys.core.internals.store.Store
 import io.eigr.synapsys.core.internals.scheduler.ActorExecutor
 import io.eigr.synapsys.core.internals.scheduler.Scheduler
+import io.eigr.synapsys.core.internals.scheduler.WorkingStealingScheduler
 import java.lang.reflect.Constructor
 
 /**
@@ -35,9 +36,10 @@ object ActorSystem {
      * Initializes the actor system with default configuration.
      * @throws IllegalStateException if called multiple times
      */
-    fun create() {
+    fun create(): ActorSystem {
         config = Config()
-        scheduler = Scheduler(config.maxReductions)
+        scheduler = WorkingStealingScheduler(config.maxReductions)
+        return this
     }
 
     /**
@@ -45,9 +47,23 @@ object ActorSystem {
      * @param config Custom configuration parameters
      * @throws IllegalStateException if called multiple times
      */
-    fun create(config: Config) {
+    fun create(config: Config): ActorSystem {
         this.config = config
-        scheduler = Scheduler(config.maxReductions)
+        scheduler = WorkingStealingScheduler(config.maxReductions)
+        return this
+    }
+
+    /**
+     * Initializes the actor system with custom configuration and custom Scheduler.
+     * @param config Custom configuration parameters
+     * @param scheduler Custom Scheduler implementation
+     * @throws IllegalStateException if called multiple times
+     */
+    fun create(config: Config, scheduler: Scheduler): ActorSystem {
+        this.config = config
+        this.scheduler = scheduler
+        this.scheduler.setSystem(this)
+        return this
     }
 
     /**
@@ -111,9 +127,11 @@ object ActorSystem {
         mailbox: Mailbox<out M> = createMailbox(config)
         ): ActorExecutor<out M> {
         val actor = actorFactory(id, initialState)
+        actor.system = this
+        actor.state = Context(initialState, this)
         actor.store = createStore(config.storeClass)
 
-        val adapter = BaseActorAdapter(actor)
+        val adapter = BaseActorAdapter(actor, this)
 
         return ActorExecutor(adapter, mailbox, supervisor?.getMessageChannel())
     }
